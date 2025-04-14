@@ -53,13 +53,21 @@ PRODUCT_COPY_FILES += \
 ENABLE_CAMERA_SERVICE := true
 
 # CAN
+PRODUCT_COPY_FILES += \
+    $(DEVICE_PATH_CAR)/canbus_config.proto:$(TARGET_COPY_OUT_SYSTEM)/etc/canbus_config.pb
+
 PRODUCT_PACKAGES += \
-    android.hardware.automotive.can-service
+    android.hardware.automotive.can-service \
+    android.hardware.automotive.can@1.0 \
+    android.hardware.automotive.can@defaults \
+    android.hardware.automotive.can@1.0-service
+
 
 PRODUCT_PACKAGES += \
     canhalctrl \
     canhaldump \
-    canhalsend
+    canhalsend \
+    canhalconfigurator
 
 # Display
 PRODUCT_COPY_FILES += \
@@ -96,6 +104,13 @@ PRODUCT_COPY_FILES += \
 # Vehicle
 PRODUCT_PACKAGES += \
     android.hardware.automotive.vehicle@V3-default-service
+
+# dwf: I2C for A2B
+PRODUCT_PACKAGES += \
+    i2cdetect \
+    i2cget \
+    i2cdump \
+    i2cset
 
 # Device identifier. This must come after all inclusions.
 PRODUCT_DEVICE := rpi5

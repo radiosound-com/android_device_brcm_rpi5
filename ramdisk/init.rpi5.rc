@@ -5,3 +5,8 @@ on init
 
 on fs
     mount_all /vendor/etc/fstab.rpi5
+
+# dwf: ugly hack to get a2b script to run after audio is streaming. TODO: proper audio_hw.c
+on property:sys.audio_streaming=1
+    exec u:r:shell:s0 -- /system/bin/sh /vendor/bin/a2b.sh
+ 

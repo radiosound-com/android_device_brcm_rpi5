@@ -13,16 +13,24 @@ disable_overscan=1
 # Display panel
 #dtoverlay=vc4-kms-dsi-7inch
 #dtoverlay=vc4-kms-dsi-ili9881-7inch
+# dwf: set up for waveshare 10.1" on DSI-1
+dtoverlay=vc4-kms-dsi-waveshare-panel,10_1_inch
+ 
+# dwf: add simple sound card to output I2S to AD242x
+dtoverlay=rpi-ad242x
 
 # Graphics acceleration
-dtoverlay=vc4-kms-v3d
+# dwf: disable hdmi audio
+dtoverlay=vc4-kms-v3d,noaudio
 dtoverlay=cma,cma-320
 
 # I2C
-#dtparam=i2c_arm=on
+# dwf: need i2c for A2B
+dtparam=i2c_arm=on
 
 # I2S
-#dtparam=i2s=on
+# dwf: need i2s for A2B
+dtparam=i2s=on
 
 # SPI
 #dtparam=spi=on

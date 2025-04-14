@@ -161,6 +161,9 @@ static int start_output_stream(struct alsa_stream_out *out)
         return -ENODEV;
     }
 
+    /* dwf: ugly hack to get A2B to start. TODO: bring i2c commands into this file or something */
+    property_set("sys.audio_streaming", "1");
+
     adev->active_output = out;
     return 0;
 }
@@ -224,6 +227,9 @@ static int do_output_standby(struct alsa_stream_out *out)
 static int out_standby(struct audio_stream *stream)
 {
     ALOGV("out_standby");
+    /* dwf: disable standby so ALSA card is always running for A2B to stay on */
+    return -ENOSYS;
+
     struct alsa_stream_out *out = (struct alsa_stream_out *)stream;
     int status;
 
@@ -536,6 +542,9 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
     out->standby = 1;
     out->unavailable = false;
 
+    /* dwf: ugly hack */
+    property_set("sys.audio_streaming", "0");
+
     config->format = out_get_format(&out->stream.common);
     config->channel_mask = out_get_channels(&out->stream.common);
     config->sample_rate = out_get_sample_rate(&out->stream.common);
@@ -552,6 +561,8 @@ static void adev_close_output_stream(struct audio_hw_device *dev,
         struct audio_stream_out *stream)
 {
     ALOGV("adev_close_output_stream...");
+    /* dwf: ugly hack */
+    property_set("sys.audio_streaming", "0");
     free(stream);
 }
 

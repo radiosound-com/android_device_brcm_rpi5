@@ -121,4 +121,9 @@
     <bool name="config_cecTvSendStandbyOnSleepEnabled_default">false</bool>
     <bool name="config_cecTvSendStandbyOnSleepDisabled_default">true</bool>
 
+    <!-- dwf: set fixed output for full strength signal out to I2S -->
+    <!-- Flag indicating that the media framework should not allow changes or mute on any
+          stream or global volumes. -->
+    <bool name="config_useFixedVolume">true</bool>
+
 </resources>

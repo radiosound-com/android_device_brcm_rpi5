@@ -25,7 +25,8 @@ BOARD_LIBCAMERA_PIPELINES := rpi/pisp
 BOARD_LIBCAMERA_USES_MESON_BUILD := true
 
 # Display
-TARGET_SCREEN_DENSITY := 240
+# dwf: waveshare 10.1" display
+TARGET_SCREEN_DENSITY := 150
 
 # Graphics
 BOARD_MESA3D_BUILD_LIBGBM := true
@@ -80,3 +81,6 @@ BOARD_WPA_SUPPLICANT_DRIVER := NL80211
 BOARD_WPA_SUPPLICANT_PRIVATE_LIB := lib_driver_cmd_$(BOARD_WLAN_DEVICE)
 WPA_SUPPLICANT_VERSION := VER_0_8_X
 BOARD_KERNEL_CMDLINE += androidboot.wificountrycode=00
+
+# dwf: Misc stuff to fix things I broke, idk
+BUILD_BROKEN_DUP_RULES := true

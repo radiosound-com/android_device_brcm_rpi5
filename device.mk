@@ -296,3 +296,11 @@ PRODUCT_COPY_FILES += \
 
 # Window extensions
 $(call inherit-product, $(SRC_TARGET_DIR)/product/window_extensions.mk)
+
+# dwf: A2B
+PRODUCT_PACKAGES += \
+    a2b.sh
+
+PRODUCT_COPY_FILES += \
+    $(DEVICE_PATH)/a2b_sh/a2b.sh:$(TARGET_COPY_OUT_VENDOR)/bin/a2b.sh
+
