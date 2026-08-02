@@ -27,6 +27,7 @@
 #include <error/Result.h>
 #include <error/expected_utils.h>
 
+#include "a2b/A2bController.h"
 #include "core-impl/StreamPrimary.h"
 
 using aidl::android::hardware::audio::common::SinkMetadata;
@@ -89,6 +90,14 @@ StreamPrimary::StreamPrimary(StreamContext* context, const Metadata& metadata)
         return mStubDriver.start();
     }
     RETURN_STATUS_IF_ERROR(StreamAlsa::start());
+    if (GetProperty("persist.vendor.audio.device", "hdmi0") == "rpi") {
+        const ::android::status_t a2bStatus = a2b::A2bController::getInstance().initialize();
+        if (a2bStatus != ::android::OK) {
+            LOG(ERROR) << "A2B initialization failed; stopping the ALSA stream";
+            StreamAlsa::shutdown();
+            return a2bStatus;
+        }
+    }
     mStartTimeNs = ::android::uptimeNanos();
     mFramesSinceStart = 0;
     mSkipNextTransfer = false;

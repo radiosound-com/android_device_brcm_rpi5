@@ -16,15 +16,19 @@ disable_overscan=1
 #dtoverlay=vc4-kms-dsi-ili9881-5inch
 #dtoverlay=vc4-kms-dsi-ili9881-7inch
 
+# Radio Sound Salted Caramel Vanilla: Waveshare 10.1-inch panel and AD242x A2B.
+dtoverlay=vc4-kms-dsi-waveshare-panel,10_1_inch
+dtoverlay=rpi-ad242x
+
 # Graphics acceleration
-dtoverlay=vc4-kms-v3d
+dtoverlay=vc4-kms-v3d,noaudio
 dtoverlay=cma,cma-320
 
 # I2C
-#dtparam=i2c_arm=on
+dtparam=i2c_arm=on
 
 # I2S
-#dtparam=i2s=on
+dtparam=i2s=on
 
 # SPI
 #dtparam=spi=on
