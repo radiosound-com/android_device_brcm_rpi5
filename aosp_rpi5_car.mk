@@ -123,3 +123,8 @@ PRODUCT_NAME := aosp_rpi5_car
 PRODUCT_BRAND := Raspberry
 PRODUCT_MODEL := Pi 5
 PRODUCT_MANUFACTURER := Raspberry
+
+# Keep the placeholder out of the final accumulated package list. This must be
+# evaluated after all product inheritance because the common car definitions
+# may append it again during product configuration.
+PRODUCT_PACKAGES := $(filter-out CarMapsPlaceholder,$(PRODUCT_PACKAGES))
