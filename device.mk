@@ -108,6 +108,15 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     com.android.hardware.health.rpi
 
+# GNSS
+# The implementation is consumed directly from Mark777a's Apache-2.0 AIDL v6
+# HAL repository by the Caramel Vanilla manifest.
+PRODUCT_PACKAGES += \
+    android.hardware.gnss-service.rpi
+
+PRODUCT_COPY_FILES += \
+    frameworks/native/data/etc/android.hardware.location.gps.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.location.gps.xml
+
 # Kernel
 PRODUCT_COPY_FILES += \
     $(DEVICE_PATH)-kernel/Image:$(PRODUCT_OUT)/kernel
@@ -148,7 +157,9 @@ PRODUCT_COPY_FILES += \
     $(DEVICE_PATH)/seccomp_policy/mediaswcodec.policy:$(TARGET_COPY_OUT_VENDOR)/etc/seccomp_policy/mediaswcodec.policy
 
 # Soong
-PRODUCT_SOONG_NAMESPACES += $(DEVICE_PATH)
+PRODUCT_SOONG_NAMESPACES += \
+    $(DEVICE_PATH) \
+    external/mark777a/AOSP-AIDL-v6-GNSS-HAL/vendor/brcm/interfaces/gnss/aidl
 
 # Storage
 $(call inherit-product, $(SRC_TARGET_DIR)/product/emulated_storage.mk)

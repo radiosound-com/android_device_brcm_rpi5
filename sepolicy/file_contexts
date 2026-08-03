@@ -5,6 +5,11 @@
 # DRM
 /data/vendor/mediadrm(/.*)?  u:object_r:mediadrm_vendor_data_file:s0
 
+# USB GNSS HAL and NMEA receiver nodes
+/vendor/bin/hw/android\.hardware\.gnss-service\.rpi$    u:object_r:hal_gnss_rpi_exec:s0
+/dev/ttyACM[0-9]+    u:object_r:gps_device:s0
+/dev/ttyUSB[0-9]+    u:object_r:gps_device:s0
+
 # Graphics
 /dev/dri(/.*)?  u:object_r:gpu_device:s0
 
