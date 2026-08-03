@@ -17,6 +17,8 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/full_base.mk)
 $(call inherit-product, packages/services/Car/car_product/build/car.mk)
 # Copyright (C) 2026 Radio Sound, Inc. for the Caramel Vanilla product integration.
 $(call inherit-product, vendor/radiosound/osmand/caramel_vanilla_osmand.mk)
+$(call inherit-product, vendor/radiosound/templates-host/caramel_vanilla_templates_host.mk)
+$(call inherit-product, vendor/radiosound/aurora-store/caramel_vanilla_aurora_store.mk)
 $(call enforce-product-packages-exist,Bluetooth Keyguard Launcher2 OverviewApp RotaryIME RotaryPlayground com.android.ranging display_compat_config libnfc_ndef libvariablespeed pppd)
 
 # android.car
