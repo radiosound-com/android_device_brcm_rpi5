@@ -28,5 +28,28 @@ fstab together; display changes select the firmware `config.txt` used for the
 boot partition. This avoids editing generated output or silently pairing an
 NVMe fstab with an SD image.
 
+## USB audio acceptance check
+
+The USB profile must be installed as an image and booted with the sound card
+attached. `ro.boot.audio.tinyalsa.simulate_input` is read-only and latched by
+the audio HAL at boot; changing only `persist.vendor.audio.device` at runtime
+does not enable real microphone capture.
+
+After booting the USB-profile image, verify the profile and hardware before
+testing the assistant:
+
+```sh
+adb -s 192.168.1.56:5555 shell getprop persist.vendor.audio.device
+adb -s 192.168.1.56:5555 shell getprop ro.boot.audio.tinyalsa.simulate_input
+adb -s 192.168.1.56:5555 shell cat /proc/asound/cards
+adb -s 192.168.1.56:5555 shell cmd car_service inject-key -a down 231
+adb -s 192.168.1.56:5555 shell cmd car_service inject-key -a up 231
+adb -s 192.168.1.56:5555 logcat -d -s CaramelVoice Vosk TextToSpeech AudioRecord AudioTrack
+```
+
+The expected properties are `usb` and `false`; `/proc/asound/cards` must list
+the attached USB device. The PTT log must show an active voice session and
+Vosk model readiness without `AudioRecord`/`AudioTrack` `ENODEV` errors.
+
 For the reference Pi, use `aosp_rpi5_car`. For a Waveshare unit on SD/eMMC,
 use `aosp_rpi5_car_emmc`.
