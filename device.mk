@@ -97,6 +97,16 @@ PRODUCT_COPY_FILES += \
 PRODUCT_PACKAGES += \
     com.android.hardware.gatekeeper.nonsecure
 
+# GPS
+PRODUCT_PACKAGES += \
+    android.hardware.gnss@1.0 \
+    android.hardware.gnss@1.0-impl \
+    android.hardware.gnss@1.0-service \
+    gps.default
+
+PRODUCT_COPY_FILES += \
+    frameworks/native/data/etc/android.hardware.location.gps.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.location.gps.xml
+
 # Graphics
 PRODUCT_PACKAGES += \
     com.android.hardware.egl.mesa \
@@ -144,9 +154,18 @@ PRODUCT_PACKAGES += \
     com.android.hardware.power
 
 # Ramdisk
+RPI5_STORAGE ?= emmc
+ifeq ($(RPI5_STORAGE),nvme)
+RPI5_FSTAB := $(DEVICE_PATH)/ramdisk/fstab.rpi5.nvme
+else ifeq ($(RPI5_STORAGE),emmc)
+RPI5_FSTAB := $(DEVICE_PATH)/ramdisk/fstab.rpi5.emmc
+else
+$(error Unsupported RPI5_STORAGE '$(RPI5_STORAGE)'; use nvme or emmc)
+endif
+
 PRODUCT_COPY_FILES += \
-    $(DEVICE_PATH)/ramdisk/fstab.rpi5:$(TARGET_COPY_OUT_RAMDISK)/fstab.rpi5 \
-    $(DEVICE_PATH)/ramdisk/fstab.rpi5:$(TARGET_COPY_OUT_VENDOR)/etc/fstab.rpi5 \
+    $(RPI5_FSTAB):$(TARGET_COPY_OUT_RAMDISK)/fstab.rpi5 \
+    $(RPI5_FSTAB):$(TARGET_COPY_OUT_VENDOR)/etc/fstab.rpi5 \
     $(DEVICE_PATH)/ramdisk/init.rpi5.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/hw/init.rpi5.rc \
     $(DEVICE_PATH)/ramdisk/init.rpi5.usb.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/hw/init.rpi5.usb.rc \
     $(DEVICE_PATH)/ramdisk/ueventd.rpi5.rc:$(TARGET_COPY_OUT_VENDOR)/etc/ueventd.rc

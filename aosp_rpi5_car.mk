@@ -6,6 +6,12 @@
 
 DEVICE_PATH := device/brcm/rpi5
 
+# Caramel Vanilla's reference unit uses the Waveshare 10.1-inch panel and an
+# NVMe root device. Explicit product variants below select other supported
+# storage/display combinations without editing the device tree by hand.
+RPI5_STORAGE ?= nvme
+RPI5_DISPLAY ?= waveshare10_1
+
 # Inherit device configuration
 $(call inherit-product, $(DEVICE_PATH)/device.mk)
 
@@ -17,9 +23,19 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/full_base.mk)
 $(call inherit-product, packages/services/Car/car_product/build/car.mk)
 # Copyright (C) 2026 Radio Sound, Inc. for the Caramel Vanilla product integration.
 $(call inherit-product, vendor/radiosound/osmand/caramel_vanilla_osmand.mk)
+ifneq ($(wildcard vendor/radiosound/templates-host/caramel_vanilla_templates_host.mk),)
 $(call inherit-product, vendor/radiosound/templates-host/caramel_vanilla_templates_host.mk)
+endif
+ifneq ($(wildcard vendor/radiosound/aurora-store/caramel_vanilla_aurora_store.mk),)
 $(call inherit-product, vendor/radiosound/aurora-store/caramel_vanilla_aurora_store.mk)
+endif
 $(call inherit-product, vendor/radiosound/voiceassistant/caramel_voice.mk)
+
+# Salted Caramel Vanilla A2B profile. The native controller runs after ALSA
+# opens the PCM clock; alternate one-node hardware can select the other profile
+# at build time without changing the controller implementation.
+$(call soong_config_set,rpi_audio,a2b_init_routine,mr_data_main_2node_tdm4)
+
 $(call enforce-product-packages-exist,Bluetooth Keyguard Launcher2 OverviewApp RotaryIME RotaryPlayground com.android.ranging display_compat_config libnfc_ndef libvariablespeed pppd)
 
 # android.car
@@ -71,6 +87,14 @@ PRODUCT_PACKAGES += \
     canhalctrl \
     canhaldump \
     canhalsend
+
+# Radio Sound Salted Caramel Vanilla CAN configuration and tools.
+PRODUCT_COPY_FILES += \
+    $(DEVICE_PATH)/car/canbus_config.proto:$(TARGET_COPY_OUT_VENDOR)/etc/canbus_config.pb
+
+PRODUCT_PACKAGES += \
+    canhalconfigurator-aidl
+
 
 # Display
 PRODUCT_COPY_FILES += \

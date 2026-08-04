@@ -13,6 +13,9 @@
 # Graphics
 /dev/dri(/.*)?  u:object_r:gpu_device:s0
 
+# A2B
+/dev/i2c-[0-9]+  u:object_r:i2c_device:s0
+
 # Partitions
 /dev/block/mmcblk0p1  u:object_r:boot_block_device:s0
 /dev/block/mmcblk0p3  u:object_r:userdata_block_device:s0

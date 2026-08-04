@@ -20,7 +20,8 @@ BOARD_HAVE_BLUETOOTH := true
 TARGET_NO_BOOTLOADER := true
 
 # Display
-TARGET_SCREEN_DENSITY := 240
+# Radio Sound Salted Caramel Vanilla: Waveshare 10.1-inch panel.
+TARGET_SCREEN_DENSITY := 150
 
 # Kernel
 BOARD_CUSTOM_BOOTIMG := true
@@ -68,3 +69,6 @@ BOARD_HOSTAPD_PRIVATE_LIB := lib_driver_cmd_$(BOARD_WLAN_DEVICE)
 BOARD_WPA_SUPPLICANT_DRIVER := NL80211
 BOARD_WPA_SUPPLICANT_PRIVATE_LIB := lib_driver_cmd_$(BOARD_WLAN_DEVICE)
 WPA_SUPPLICANT_VERSION := VER_0_8_X
+
+# Radio Sound Salted Caramel Vanilla compatibility for mixed generated rules.
+BUILD_BROKEN_DUP_RULES := true
