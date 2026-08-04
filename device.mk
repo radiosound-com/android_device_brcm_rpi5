@@ -6,6 +6,27 @@
 
 DEVICE_PATH := device/brcm/rpi5
 
+# The reference unit uses the Salted Caramel A2B/I2S path. A USB audio profile
+# is available for development units whose microphone and speaker are a USB
+# sound card. Keep this a product-time option so the default image remains
+# unchanged:
+#
+#   m RPI5_AUDIO=usb -j8
+RPI5_AUDIO ?= a2b
+ifeq ($(RPI5_AUDIO),a2b)
+RPI5_AUDIO_DEVICE := rpi
+RPI5_SIMULATE_INPUT := true
+else ifeq ($(RPI5_AUDIO),usb)
+RPI5_AUDIO_DEVICE := usb
+RPI5_SIMULATE_INPUT := false
+else
+$(error Unsupported RPI5_AUDIO '$(RPI5_AUDIO)'; use a2b or usb)
+endif
+
+PRODUCT_VENDOR_PROPERTIES += \
+    persist.vendor.audio.device=$(RPI5_AUDIO_DEVICE) \
+    ro.boot.audio.tinyalsa.simulate_input=$(RPI5_SIMULATE_INPUT)
+
 $(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit_only.mk)
 $(call inherit-product, frameworks/native/build/tablet-7in-xhdpi-2048-dalvik-heap.mk)
 

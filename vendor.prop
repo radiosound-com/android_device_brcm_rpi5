@@ -1,9 +1,9 @@
 # Audio
-# Radio Sound Salted Caramel Vanilla: route primary audio to the A2B/I2S card.
-persist.vendor.audio.device=rpi
+# Audio routing is selected in device.mk with RPI5_AUDIO. The default is the
+# Salted Caramel A2B/I2S path; use RPI5_AUDIO=usb for USB microphone/speaker
+# development hardware.
 persist.vendor.gps.device=/dev/ttyACM0
 ro.kernel.android.gps=ttyACM0
-ro.boot.audio.tinyalsa.simulate_input=true
 ro.config.media_vol_default=20
 ro.config.media_vol_steps=25
 
