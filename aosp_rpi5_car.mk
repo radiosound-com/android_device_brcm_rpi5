@@ -19,6 +19,7 @@ $(call inherit-product, packages/services/Car/car_product/build/car.mk)
 $(call inherit-product, vendor/radiosound/osmand/caramel_vanilla_osmand.mk)
 $(call inherit-product, vendor/radiosound/templates-host/caramel_vanilla_templates_host.mk)
 $(call inherit-product, vendor/radiosound/aurora-store/caramel_vanilla_aurora_store.mk)
+$(call inherit-product, vendor/radiosound/voiceassistant/caramel_voice.mk)
 $(call enforce-product-packages-exist,Bluetooth Keyguard Launcher2 OverviewApp RotaryIME RotaryPlayground com.android.ranging display_compat_config libnfc_ndef libvariablespeed pppd)
 
 # android.car
