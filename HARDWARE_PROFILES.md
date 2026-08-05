@@ -38,10 +38,13 @@ fstab together; display changes select the firmware `config.txt` used for the
 boot partition. This avoids editing generated output or silently pairing an
 NVMe fstab with an SD image.
 
-The USB policy declares 44.1 kHz and 48 kHz stereo output for the dynamic USB
-device port. The AOSP policy leaves that port profile-less, which caused the
-reference ICUSBAUDIO7D card's output connection to be rejected even though
-direct ALSA playback worked. With the product policy, `cmd audio
+The USB policy declares 44.1 kHz and 48 kHz stereo output for the USB device
+port. The AOSP policy leaves that port profile-less, which caused the reference
+ICUSBAUDIO7D card's output connection to be rejected even though direct ALSA
+playback worked. This endpoint also rejects the TinyALSA `HW_REFINE` capability
+probe used by the generic USB AIDL HAL. The product-specific USB HAL therefore
+retains the validated static output profile while continuing normal dynamic
+capability discovery for USB capture. With the product policy, `cmd audio
 get-connected-output-devices` includes `USB_DEVICE` and Android media/TTS
 output can use the USB speaker path.
 

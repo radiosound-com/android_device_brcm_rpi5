@@ -28,6 +28,7 @@
 using aidl::android::hardware::audio::common::SinkMetadata;
 using aidl::android::hardware::audio::common::SourceMetadata;
 using aidl::android::media::audio::common::AudioDeviceDescription;
+using aidl::android::media::audio::common::AudioDeviceType;
 using aidl::android::media::audio::common::AudioOffloadInfo;
 using aidl::android::media::audio::common::AudioPort;
 using aidl::android::media::audio::common::AudioPortConfig;
@@ -92,6 +93,17 @@ ndk::ScopedAStatus ModuleUsb::populateConnectedDevicePort(AudioPort* audioPort,
     if (!isUsbDevicePort(*audioPort)) {
         LOG(ERROR) << __func__ << ": port id " << audioPort->id << " is not a usb device port";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+    }
+
+    // Some USB Audio Class output endpoints reject the TinyALSA HW_REFINE ioctl even though
+    // they open and play correctly with the static PCM profile supplied by the product policy.
+    // Keep that validated static profile for output. Inputs still use normal capability
+    // discovery, and dynamic USB output ports retain the AOSP behavior.
+    const auto& device = audioPort->ext.get<AudioPortExt::Tag::device>().device;
+    if (device.type.type == AudioDeviceType::OUT_DEVICE && !audioPort->profiles.empty()) {
+        LOG(DEBUG) << __func__ << ": keeping static USB output profiles for "
+                   << device.toString();
+        return ndk::ScopedAStatus::ok();
     }
     return ModuleAlsa::populateConnectedDevicePort(audioPort, nextPortId);
 }
