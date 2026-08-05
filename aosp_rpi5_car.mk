@@ -6,6 +6,12 @@
 
 DEVICE_PATH := device/brcm/rpi5
 
+# Caramel's USB audio devices can expose ALSA nodes after Android's USB host
+# callback.  The product-specific release config selects the compatible Aconfig
+# defaults without changing unrelated AOSP products.
+PRODUCT_RELEASE_CONFIG_MAPS += \
+    $(DEVICE_PATH)/release/release_config_map.textproto
+
 # Caramel Vanilla's reference unit uses the Waveshare 10.1-inch panel and an
 # NVMe root device. Explicit product variants below select other supported
 # storage/display combinations without editing the device tree by hand.

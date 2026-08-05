@@ -15,7 +15,11 @@ PRODUCT_MAKEFILES := \
 COMMON_LUNCH_CHOICES := \
     aosp_rpi5-trunk_staging-userdebug \
     aosp_rpi5_car-trunk_staging-userdebug \
+    aosp_rpi5_car-caramel-userdebug \
     aosp_rpi5_car_emmc-trunk_staging-userdebug \
+    aosp_rpi5_car_emmc-caramel-userdebug \
     aosp_rpi5_car_hdmi-trunk_staging-userdebug \
+    aosp_rpi5_car_hdmi-caramel-userdebug \
     aosp_rpi5_car_emmc_hdmi-trunk_staging-userdebug \
+    aosp_rpi5_car_emmc_hdmi-caramel-userdebug \
     aosp_rpi5_tv-trunk_staging-userdebug

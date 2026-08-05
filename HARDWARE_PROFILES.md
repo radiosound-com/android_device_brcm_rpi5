@@ -32,6 +32,20 @@ supported mixer input explicitly:
 m RPI5_AUDIO=usb RPI5_AUDIO_USB_CAPTURE_SOURCE=Line -j8
 ```
 
+Use the Caramel release target for product images. It disables AOSP's
+`wait_for_alsa_scan_results_if_has_audio_interface` Aconfig flag only for this
+product, because Pi 5 USB callbacks can arrive before the corresponding ALSA
+node. The older card-number wait path still provides automatic routing and
+avoids the boot-time input-registration race:
+
+```sh
+lunch aosp_rpi5_car-caramel-userdebug
+m RPI5_AUDIO=usb -j8
+```
+
+The `trunk_staging` lunch targets remain available for comparison and for
+non-Caramel builds.
+
 The route is applied by the USB audio HAL each time the card connects, so it
 survives reboot and USB re-enumeration. Unsupported cards are left unchanged
 and log a warning. Storage changes select the complete first-stage and vendor
@@ -103,6 +117,14 @@ loading the bundled Vosk model; play test audio only after `Vosk model ready`
 appears in logcat. A `Recognition error: 6` means
 `ERROR_SPEECH_TIMEOUT`, usually because the selected mixer source contains no
 speech or the test audio was sent before model loading completed.
+
+`Recognition error: 5` is `ERROR_CLIENT` from Vosk failing to create
+`AudioRecord`; on this hardware it normally means Android has not registered a
+USB capture route yet, even though `/proc/asound/cards` lists the microphone.
+Check `cmd audio get-connected-input-devices` before blaming the microphone.
+After the Caramel release fix, a physical mic replug should be unnecessary;
+if testing an older image, unplug/replug the mic and wait for the
+`UsbAlsaManager` add event before retrying PTT.
 
 For the reference Pi, use `aosp_rpi5_car`. For a Waveshare unit on SD/eMMC,
 use `aosp_rpi5_car_emmc`.

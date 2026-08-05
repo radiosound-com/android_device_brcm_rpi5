@@ -1,0 +1,7 @@
+# Copyright (C) 2026 Radio Sound, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+name: "caramel"
+inherits: "trunk_staging"
+aconfig_value_sets: "aconfig_value_set-vendor_radiosound_caramel_usb"
+release_config_type: RELEASE_CONFIG
