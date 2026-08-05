@@ -136,6 +136,14 @@ PRODUCT_PACKAGES += \
     SettingsProviderRpiOverlay \
     WifiRpiOverlay
 
+# The Waveshare DSI panel has a 30 Hz default mode in this board's reported
+# mode list. Apply the user-scoped 60 Hz settings at boot only for Waveshare
+# products; HDMI variants must retain their display's own mode policy.
+ifeq ($(RPI5_DISPLAY),waveshare10_1)
+PRODUCT_PACKAGES += \
+    CaramelWaveshareDisplayDefaults
+endif
+
 # Permissions
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.software.activities_on_secondary_displays.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.activities_on_secondary_displays.xml \

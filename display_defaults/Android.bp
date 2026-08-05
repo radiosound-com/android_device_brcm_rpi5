@@ -1,0 +1,12 @@
+// Copyright 2026 Radio Sound, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
+android_app {
+    name: "CaramelWaveshareDisplayDefaults",
+    srcs: ["src/**/*.java"],
+    manifest: "AndroidManifest.xml",
+    certificate: "platform",
+    privileged: true,
+    product_specific: true,
+    sdk_version: "current",
+}

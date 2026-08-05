@@ -28,6 +28,21 @@ fstab together; display changes select the firmware `config.txt` used for the
 boot partition. This avoids editing generated output or silently pairing an
 NVMe fstab with an SD image.
 
+## Display defaults
+
+All Caramel Vanilla products initialize Android's
+`Settings.System.SCREEN_OFF_TIMEOUT` to `3600000` ms (one hour) through the
+SettingsProvider resource overlay. The existing plugged-in stay-awake policy
+is unchanged.
+
+Waveshare products also include the platform-signed
+`CaramelWaveshareDisplayDefaults` receiver. It runs for the active Android
+user at locked boot, normal boot, and user unlock, and persists
+`peak_refresh_rate=60.0` and `min_refresh_rate=60.0` in SettingsProvider. This
+is intentionally user-scoped rather than a boot-image edit, so the values
+survive reboot and apply to the current car user (including user 10). HDMI
+products do not include the receiver.
+
 ## USB audio acceptance check
 
 The USB profile must be installed as an image and booted with the sound card
