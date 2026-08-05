@@ -19,6 +19,7 @@ RPI5_SIMULATE_INPUT := true
 else ifeq ($(RPI5_AUDIO),usb)
 RPI5_AUDIO_DEVICE := usb
 RPI5_SIMULATE_INPUT := false
+RPI5_AUDIO_USB_CAPTURE_SOURCE ?= Line
 else
 $(error Unsupported RPI5_AUDIO '$(RPI5_AUDIO)'; use a2b or usb)
 endif
@@ -26,6 +27,10 @@ endif
 PRODUCT_VENDOR_PROPERTIES += \
     persist.vendor.audio.device=$(RPI5_AUDIO_DEVICE) \
     ro.boot.audio.tinyalsa.simulate_input=$(RPI5_SIMULATE_INPUT)
+ifeq ($(RPI5_AUDIO),usb)
+PRODUCT_VENDOR_PROPERTIES += \
+    persist.vendor.audio.usb.capture_source=$(RPI5_AUDIO_USB_CAPTURE_SOURCE)
+endif
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit_only.mk)
 $(call inherit-product, frameworks/native/build/tablet-7in-xhdpi-2048-dalvik-heap.mk)

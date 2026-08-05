@@ -16,6 +16,7 @@
 
 #define LOG_TAG "AHAL_UsbAlsaMixerControl"
 #include <android-base/logging.h>
+#include <android-base/properties.h>
 
 #include <android/binder_status.h>
 
@@ -39,6 +40,14 @@ void UsbAlsaMixerControl::setDeviceConnectionState(int card, bool masterMuted, f
         }
         alsaMixer->setMasterMute(masterMuted);
         alsaMixer->setMasterVolume(masterVolume);
+        const std::string captureSource =
+                ::android::base::GetProperty("persist.vendor.audio.usb.capture_source", "");
+        if (!captureSource.empty()) {
+            if (auto result = alsaMixer->setCaptureSource(captureSource); !result.isOk()) {
+                LOG(WARNING) << __func__ << ": capture source '" << captureSource
+                             << "' is not supported by card=" << card;
+            }
+        }
         const std::lock_guard guard(mLock);
         mMixerControls.emplace(card, alsaMixer);
     } else {

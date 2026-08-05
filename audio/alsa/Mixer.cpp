@@ -154,6 +154,23 @@ ndk::ScopedAStatus Mixer::setMicMute(bool muted) {
     return setMixerControlMute(MIC_SWITCH, muted);
 }
 
+ndk::ScopedAStatus Mixer::setCaptureSource(const std::string& source) {
+    if (!isValid()) {
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+    }
+    struct mixer_ctl* control = mixer_get_ctl_by_name(mMixer, "PCM Capture Source");
+    if (control == nullptr || mixer_ctl_get_type(control) != MIXER_CTL_TYPE_ENUM) {
+        return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+    }
+    std::lock_guard l(mMixerAccess);
+    if (mixer_ctl_set_enum_by_string(control, source.c_str()) != 0) {
+        LOG(WARNING) << __func__ << ": unable to select capture source '" << source << "'";
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+    }
+    LOG(INFO) << __func__ << ": selected capture source '" << source << "'";
+    return ndk::ScopedAStatus::ok();
+}
+
 ndk::ScopedAStatus Mixer::setVolumes(const std::vector<float>& volumes) {
     struct mixer_ctl* mctl;
     RETURN_STATUS_IF_ERROR(findControl(Mixer::HW_VOLUME, &mctl));
