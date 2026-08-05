@@ -33,10 +33,16 @@ namespace hardware {
 namespace usb {
 namespace gadget {
 
-UsbGadget::UsbGadget() {
+UsbGadget::UsbGadget()
+    : mCurrentUsbFunctions(GadgetFunction::NONE),
+      mCurrentUsbFunctionsApplied(false),
+      mUsbSpeed(UsbSpeed::UNKNOWN) {
     if (access(OS_DESC_PATH, R_OK) != 0) {
-        ALOGE("configfs setup not done yet");
-        abort();
+        // init normally starts this service after the configfs setup action.
+        // Keep the HAL alive if a future init ordering change violates that
+        // assumption; framework calls will return an ordinary HAL error until
+        // the gadget is configured instead of taking down system_server.
+        ALOGW("configfs setup not done yet; USB gadget calls may fail");
     }
 }
 

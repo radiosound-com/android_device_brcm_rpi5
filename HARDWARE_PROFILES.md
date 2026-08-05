@@ -46,6 +46,14 @@ m RPI5_AUDIO=usb -j8
 The `trunk_staging` lunch targets remain available for comparison and for
 non-Caramel builds.
 
+The Pi 5 USB gadget service is started only after the product init action has
+created and permissioned its configfs gadget tree. The previous `class hal`
+startup could race that action: `UsbGadget` aborted when `os_desc/b.1` was not
+yet present, and a concurrent Android user switch could then crash
+`system_server`. The service is now disabled for class startup and explicitly
+started at the end of the configfs setup action; the HAL also treats a missing
+tree as a recoverable setup error rather than aborting the process.
+
 The route is applied by the USB audio HAL each time the card connects, so it
 survives reboot and USB re-enumeration. Unsupported cards are left unchanged
 and log a warning. Storage changes select the complete first-stage and vendor
