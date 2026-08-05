@@ -425,15 +425,17 @@ std::unique_ptr<Configuration> getUsbConfiguration() {
                 createPort(c.nextPortId++, "USB Device Out", 0, false,
                            createDeviceExt(AudioDeviceType::OUT_DEVICE, 0,
                                            AudioDeviceDescription::CONNECTION_USB));
+        // Keep the output endpoint profile static. Some UAC devices reject TinyALSA HW_REFINE
+        // even though the validated PCM profile opens and plays normally.
+        usbOutDevice.profiles = standardPcmAudioProfiles;
         c.ports.push_back(usbOutDevice);
-        c.connectedProfiles[usbOutDevice.id] = standardPcmAudioProfiles;
 
         AudioPort usbOutHeadset =
                 createPort(c.nextPortId++, "USB Headset Out", 0, false,
                            createDeviceExt(AudioDeviceType::OUT_HEADSET, 0,
                                            AudioDeviceDescription::CONNECTION_USB));
+        usbOutHeadset.profiles = standardPcmAudioProfiles;
         c.ports.push_back(usbOutHeadset);
-        c.connectedProfiles[usbOutHeadset.id] = standardPcmAudioProfiles;
 
         AudioPort usbInDevice = createPort(c.nextPortId++, "USB Device In", 0, true,
                                            createDeviceExt(AudioDeviceType::IN_DEVICE, 0,

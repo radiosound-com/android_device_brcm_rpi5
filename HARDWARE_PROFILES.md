@@ -52,6 +52,11 @@ All Caramel products include `CaramelVoiceDefaults`, which selects the bundled
 offline eSpeak engine as `tts_default_synth` for an active user only when that
 user has no TTS choice. This is a product-signed boot receiver, so apps such as
 OsmAnd can use Android's normal default-engine path after a clean flash.
+It also grants only the bundled `com.reecedunn.espeak` package the
+`control_audio` and `control_audio_partial` app-ops. Android 16's playback
+hardening otherwise treats the background-bound TTS service as background
+audio and mutes it. The package-scoped allowlist preserves hardening for every
+other application and is reapplied for each active user at boot and unlock.
 
 ## Display defaults
 
@@ -92,8 +97,11 @@ The expected properties are `usb` and `false`; `/proc/asound/cards` must list
 the attached USB device. With the reference line-in setup,
 `tinymix`/`dumpsys media.audio_flinger` should show the selected `Line` source;
 the PTT log must show Vosk partial/final text and no `AudioRecord`/`AudioTrack`
-`ENODEV` errors. A `Recognition error: 6` means `ERROR_SPEECH_TIMEOUT`, usually
-because the selected mixer source contains no speech.
+`ENODEV` errors. The first PTT invocation after boot may spend a few seconds
+loading the bundled Vosk model; play test audio only after `Vosk model ready`
+appears in logcat. A `Recognition error: 6` means
+`ERROR_SPEECH_TIMEOUT`, usually because the selected mixer source contains no
+speech or the test audio was sent before model loading completed.
 
 For the reference Pi, use `aosp_rpi5_car`. For a Waveshare unit on SD/eMMC,
 use `aosp_rpi5_car_emmc`.
