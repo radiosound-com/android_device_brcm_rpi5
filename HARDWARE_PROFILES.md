@@ -38,6 +38,13 @@ fstab together; display changes select the firmware `config.txt` used for the
 boot partition. This avoids editing generated output or silently pairing an
 NVMe fstab with an SD image.
 
+The USB policy declares 44.1 kHz and 48 kHz stereo output for the dynamic USB
+device port. The AOSP policy leaves that port profile-less, which caused the
+reference ICUSBAUDIO7D card's output connection to be rejected even though
+direct ALSA playback worked. With the product policy, `cmd audio
+get-connected-output-devices` includes `USB_DEVICE` and Android media/TTS
+output can use the USB speaker path.
+
 All Caramel products include `CaramelVoiceDefaults`, which selects the bundled
 offline eSpeak engine as `tts_default_synth` for an active user only when that
 user has no TTS choice. This is a product-signed boot receiver, so apps such as
@@ -72,6 +79,7 @@ testing the assistant:
 adb -s 192.168.1.56:5555 shell getprop persist.vendor.audio.device
 adb -s 192.168.1.56:5555 shell getprop ro.boot.audio.tinyalsa.simulate_input
 adb -s 192.168.1.56:5555 shell cat /proc/asound/cards
+adb -s 192.168.1.56:5555 shell cmd audio get-connected-output-devices
 # Keep the down/up pair atomic; separate ADB calls may become a long press.
 adb -s 192.168.1.56:5555 shell cmd car_service inject-key -t 200 231
 adb -s 192.168.1.56:5555 logcat -d -s CaramelVoice Vosk TextToSpeech AudioRecord AudioTrack
