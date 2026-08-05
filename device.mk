@@ -19,7 +19,7 @@ RPI5_SIMULATE_INPUT := true
 else ifeq ($(RPI5_AUDIO),usb)
 RPI5_AUDIO_DEVICE := usb
 RPI5_SIMULATE_INPUT := false
-RPI5_AUDIO_USB_CAPTURE_SOURCE ?= Line
+RPI5_AUDIO_USB_CAPTURE_SOURCE ?= Mic
 else
 $(error Unsupported RPI5_AUDIO '$(RPI5_AUDIO)'; use a2b or usb)
 endif

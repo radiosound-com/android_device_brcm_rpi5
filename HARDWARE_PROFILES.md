@@ -24,11 +24,12 @@ m RPI5_AUDIO=usb -j8
 `RPI5_AUDIO=a2b` is the default and preserves the reference behavior;
 `RPI5_AUDIO=usb` routes the primary ALSA path to card 0 and disables the input
 simulation flag. The USB profile defaults the ALSA `PCM Capture Source` to
-`Line` when that mixer control exists, which matches the reference USB card's
-line-in connection. Select a microphone input explicitly when needed:
+`Mic` when that mixer control exists, which is the normal voice-assistant
+configuration. Select `Line` for a wired line-in test, or choose another
+supported mixer input explicitly:
 
 ```sh
-m RPI5_AUDIO=usb RPI5_AUDIO_USB_CAPTURE_SOURCE=Mic -j8
+m RPI5_AUDIO=usb RPI5_AUDIO_USB_CAPTURE_SOURCE=Line -j8
 ```
 
 The route is applied by the USB audio HAL each time the card connects, so it
@@ -94,8 +95,8 @@ adb -s 192.168.1.56:5555 logcat -d -s CaramelVoice Vosk TextToSpeech AudioRecord
 ```
 
 The expected properties are `usb` and `false`; `/proc/asound/cards` must list
-the attached USB device. With the reference line-in setup,
-`tinymix`/`dumpsys media.audio_flinger` should show the selected `Line` source;
+the attached USB device. With a microphone setup,
+`tinymix`/`dumpsys media.audio_flinger` should show the selected `Mic` source;
 the PTT log must show Vosk partial/final text and no `AudioRecord`/`AudioTrack`
 `ENODEV` errors. The first PTT invocation after boot may spend a few seconds
 loading the bundled Vosk model; play test audio only after `Vosk model ready`
