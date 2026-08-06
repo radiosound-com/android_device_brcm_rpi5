@@ -61,6 +61,27 @@ fstab together; display changes select the firmware `config.txt` used for the
 boot partition. This avoids editing generated output or silently pairing an
 NVMe fstab with an SD image.
 
+## NVMe bootloader prerequisite
+
+The Android image supplies the NVMe fstab and, for `RPI5_STORAGE=nvme`, adds
+`dtparam=pciex1` to the firmware configuration so Linux enables the PCIe link.
+The Raspberry Pi 5 bootloader configuration is separate from the image. For a
+non-HAT+ PCIe/NVMe adapter, set these EEPROM values once from Raspberry Pi OS
+booted on a temporary SD card (or with the Raspberry Pi bootloader utility):
+
+```ini
+[all]
+BOOT_ORDER=0xf416
+PCIE_PROBE=1
+BOOT_UART=1
+```
+
+`BOOT_ORDER=0xf416` tries NVMe first, then SD and USB-MSD; `PCIE_PROBE=1`
+allows the bootloader to probe adapters without a HAT+ EEPROM. `BOOT_UART=1`
+keeps the early boot log available at 115200 baud for diagnosis. The EEPROM
+settings cannot be reliably changed by copying files into an Android image,
+because the bootloader must discover the NVMe before it can read that image.
+
 The USB policy declares 44.1 kHz and 48 kHz stereo output for the USB device
 port. The AOSP policy leaves that port profile-less, which caused the reference
 ICUSBAUDIO7D card's output connection to be rejected even though direct ALSA
