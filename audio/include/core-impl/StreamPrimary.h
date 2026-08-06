@@ -64,7 +64,9 @@ class StreamPrimary : public StreamAlsa {
     static constexpr StreamPrimary::AlsaDeviceId kStubDeviceId{
             primary::PrimaryMixer::kInvalidAlsaCard, primary::PrimaryMixer::kInvalidAlsaDevice};
 
-    static AlsaDeviceId getCardId();
+    static AlsaDeviceId getCardId(bool isInput);
+    static int findUsbCard(bool isInput);
+    static bool hasUsbCaptureCard(int card);
     static bool hasUsbPlaybackCard(int card);
     static AlsaDeviceId getCardAndDeviceId(
             const std::vector<::aidl::android::media::audio::common::AudioDevice>& devices);
@@ -76,6 +78,7 @@ class StreamPrimary : public StreamAlsa {
     DriverStubImpl mStubDriver;
     mutable std::mutex mLock;
     AlsaDeviceId mAlsaDeviceId GUARDED_BY(mLock) = kStubDeviceId;
+    bool mCanRetryHardwareCard GUARDED_BY(mLock) = false;
 
     // Used by the worker thread only.
     AlsaDeviceId mCurrAlsaDeviceId = kStubDeviceId;
