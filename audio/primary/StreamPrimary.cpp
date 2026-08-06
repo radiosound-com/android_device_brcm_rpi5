@@ -208,7 +208,12 @@ StreamPrimary::AlsaDeviceId StreamPrimary::getCardId() {
         cardPath = "/proc/asound/card" + std::to_string(i) + "/id";
         std::string cardName;
         if (ReadFileToString(cardPath, &cardName)) {
-            if (deviceName == "jack" && cardName.starts_with("Headphones")) {
+            if (deviceName == "usb" && hasUsbPlaybackCard(i)) {
+                LOG(INFO) << "Using USB PCM card " << i << " for primary output "
+                          << cardName;
+                cardAndDeviceId.first = i;
+                return cardAndDeviceId;
+            } else if (deviceName == "jack" && cardName.starts_with("Headphones")) {
                 LOG(INFO) << "Using PCM card " << i << " for 3.5mm audio jack";
                 cardAndDeviceId.first = i;
                 return cardAndDeviceId;
@@ -224,6 +229,29 @@ StreamPrimary::AlsaDeviceId StreamPrimary::getCardId() {
     LOG(INFO) << "Could not probe PCM card for " << deviceName << ", falling back to PCM card 0";
     cardAndDeviceId.first = 0;
     return cardAndDeviceId;
+}
+
+bool StreamPrimary::hasUsbPlaybackCard(int card) {
+    std::string usbId;
+    const std::string cardPath = "/proc/asound/card" + std::to_string(card);
+    if (!ReadFileToString(cardPath + "/usbid", &usbId)) return false;
+
+    std::string pcmDevices;
+    if (!ReadFileToString("/proc/asound/pcm", &pcmDevices)) return false;
+
+    const std::string prefix = std::to_string(card) + "-";
+    size_t lineStart = 0;
+    while (lineStart < pcmDevices.size()) {
+        size_t lineEnd = pcmDevices.find('\n', lineStart);
+        if (lineEnd == std::string::npos) lineEnd = pcmDevices.size();
+        if (lineEnd - lineStart >= prefix.size()
+                && pcmDevices.compare(lineStart, prefix.size(), prefix) == 0
+                && pcmDevices.find("playback", lineStart) < lineEnd) {
+            return true;
+        }
+        lineStart = lineEnd + 1;
+    }
+    return false;
 }
 
 // static

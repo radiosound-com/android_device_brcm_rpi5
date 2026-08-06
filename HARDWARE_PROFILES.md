@@ -22,8 +22,11 @@ m RPI5_AUDIO=usb -j8
 ```
 
 `RPI5_AUDIO=a2b` is the default and preserves the reference behavior;
-`RPI5_AUDIO=usb` routes the primary ALSA path to card 0 and disables the input
-simulation flag. The USB profile defaults the ALSA `PCM Capture Source` to
+`RPI5_AUDIO=usb` routes primary output to the first USB ALSA card that exposes
+playback, rather than assuming USB card 0, and disables the input simulation
+flag. This matters when a capture-only USB microphone enumerates before a
+USB sound card. USB capture remains dynamically selected by Android's USB
+audio manager. The USB profile defaults the ALSA `PCM Capture Source` to
 `Mic` when that mixer control exists, which is the normal voice-assistant
 configuration. Select `Line` for a wired line-in test, or choose another
 supported mixer input explicitly:

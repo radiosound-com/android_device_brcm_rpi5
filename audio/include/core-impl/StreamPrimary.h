@@ -65,6 +65,7 @@ class StreamPrimary : public StreamAlsa {
             primary::PrimaryMixer::kInvalidAlsaCard, primary::PrimaryMixer::kInvalidAlsaDevice};
 
     static AlsaDeviceId getCardId();
+    static bool hasUsbPlaybackCard(int card);
     static AlsaDeviceId getCardAndDeviceId(
             const std::vector<::aidl::android::media::audio::common::AudioDevice>& devices);
     static bool useStubStream(bool isInput,
