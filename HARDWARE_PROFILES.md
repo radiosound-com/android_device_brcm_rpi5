@@ -61,6 +61,12 @@ fstab together; display changes select the firmware `config.txt` used for the
 boot partition. This avoids editing generated output or silently pairing an
 NVMe fstab with an SD image.
 
+USB capture capabilities are intentionally discovered from the connected ALSA
+endpoint. Common USB microphones such as the AK5370 expose mono capture only,
+while USB line inputs may expose stereo. A fixed stereo input profile makes
+AudioFlinger open an unsupported stream, leaving recognition with zero frames
+and repeated HAL `-38` errors.
+
 ## NVMe bootloader prerequisite
 
 The Android image supplies the NVMe fstab and, for `RPI5_STORAGE=nvme`, adds

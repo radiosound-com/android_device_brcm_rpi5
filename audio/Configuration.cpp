@@ -403,8 +403,7 @@ std::unique_ptr<Configuration> getRSubmixConfiguration() {
 //    - profile PCM 16-bit; MONO, STEREO, INDEX_MASK_1, INDEX_MASK_2; 44100, 48000
 //    - profile PCM 24-bit; MONO, STEREO, INDEX_MASK_1, INDEX_MASK_2; 44100, 48000
 //  * "USB Device In", "USB Headset In":
-//    - profile PCM 16-bit; MONO, STEREO, INDEX_MASK_1, INDEX_MASK_2; 44100, 48000
-//    - profile PCM 24-bit; MONO, STEREO, INDEX_MASK_1, INDEX_MASK_2; 44100, 48000
+//    - profiles are populated from the connected ALSA endpoint
 //
 std::unique_ptr<Configuration> getUsbConfiguration() {
     static const Configuration configuration = []() {
@@ -441,14 +440,12 @@ std::unique_ptr<Configuration> getUsbConfiguration() {
                                            createDeviceExt(AudioDeviceType::IN_DEVICE, 0,
                                                            AudioDeviceDescription::CONNECTION_USB));
         c.ports.push_back(usbInDevice);
-        c.connectedProfiles[usbInDevice.id] = standardPcmAudioProfiles;
 
         AudioPort usbInHeadset =
                 createPort(c.nextPortId++, "USB Headset In", 0, true,
                            createDeviceExt(AudioDeviceType::IN_HEADSET, 0,
                                            AudioDeviceDescription::CONNECTION_USB));
         c.ports.push_back(usbInHeadset);
-        c.connectedProfiles[usbInHeadset.id] = standardPcmAudioProfiles;
 
         // Mix ports
 
