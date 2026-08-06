@@ -65,6 +65,24 @@ NVMe fstab with an SD image.
 
 The Android image supplies the NVMe fstab and, for `RPI5_STORAGE=nvme`, adds
 `dtparam=pciex1` to the firmware configuration so Linux enables the PCIe link.
+The reference product defaults to PCIe Gen 3 through `RPI5_PCIE_GEN=3`, which
+adds `dtparam=pciex1_gen=3`. Select the supported Gen 2 fallback at build time
+with `RPI5_PCIE_GEN=2`; that leaves the link at the Raspberry Pi default:
+
+```sh
+RPI5_PCIE_GEN=2 m bootimage
+```
+
+Raspberry Pi documents Gen 3 as uncertified on Pi 5 and warns that it may be
+unstable. If the NVMe fails to enumerate, Android reboots, or storage errors
+appear under load, rebuild with `RPI5_PCIE_GEN=2`. The generated Gen 3 boot
+configuration contains both lines:
+
+```ini
+dtparam=pciex1
+dtparam=pciex1_gen=3
+```
+
 The Raspberry Pi 5 bootloader configuration is separate from the image. For a
 non-HAT+ PCIe/NVMe adapter, set these EEPROM values once from Raspberry Pi OS
 booted on a temporary SD card (or with the Raspberry Pi bootloader utility):

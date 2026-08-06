@@ -17,6 +17,11 @@ PRODUCT_RELEASE_CONFIG_MAPS += \
 # storage/display combinations without editing the device tree by hand.
 RPI5_STORAGE ?= nvme
 RPI5_DISPLAY ?= waveshare10_1
+# Raspberry Pi 5's PCIe Gen 3 mode is faster but not certified by Raspberry
+# Pi.  Keep the reference NVMe product fast while retaining a product/build
+# override for adapters or boards that are more stable at the default Gen 2:
+#   RPI5_PCIE_GEN=2 m bootimage
+RPI5_PCIE_GEN ?= 3
 
 # Inherit device configuration
 $(call inherit-product, $(DEVICE_PATH)/device.mk)

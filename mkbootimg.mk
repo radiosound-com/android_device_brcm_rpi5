@@ -16,7 +16,13 @@ $(RPI_BOOT_OUT): $(INSTALLED_RAMDISK_TARGET)
 	if [ "$(RPI5_DISPLAY)" = "waveshare10_1" ]; then :; \
 	elif [ "$(RPI5_DISPLAY)" = "hdmi" ]; then cp $(DEVICE_PATH)/boot/config.txt.hdmi $(RPI_BOOT_OUT)/config.txt; \
 	else echo "Unsupported RPI5_DISPLAY '$(RPI5_DISPLAY)'; use waveshare10_1 or hdmi"; exit 1; fi
-	if [ "$(RPI5_STORAGE)" = "nvme" ]; then echo "dtparam=pciex1" >> $(RPI_BOOT_OUT)/config.txt; fi
+	if [ "$(RPI5_STORAGE)" = "nvme" ]; then \
+		if [ "$(RPI5_PCIE_GEN)" = "2" ]; then :; \
+		elif [ "$(RPI5_PCIE_GEN)" = "3" ]; then :; \
+		else echo "Unsupported RPI5_PCIE_GEN '$(RPI5_PCIE_GEN)'; use 2 or 3"; exit 1; fi; \
+		echo "dtparam=pciex1" >> $(RPI_BOOT_OUT)/config.txt; \
+		if [ "$(RPI5_PCIE_GEN)" = "3" ]; then echo "dtparam=pciex1_gen=3" >> $(RPI_BOOT_OUT)/config.txt; fi; \
+	fi
 	cp $(KERNEL_PATH)/Image $(RPI_BOOT_OUT)
 	cp $(KERNEL_PATH)/bcm2712*-rpi-*.dtb $(RPI_BOOT_OUT)
 	cp $(KERNEL_PATH)/overlays/* $(RPI_BOOT_OUT)/overlays
