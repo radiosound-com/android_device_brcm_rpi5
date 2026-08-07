@@ -9,6 +9,7 @@ The supported lunch targets are:
 | Product | Storage | Display |
 | --- | --- | --- |
 | `aosp_rpi5_car` | NVMe | Waveshare 10.1-inch DSI |
+| `aosp_rpi5_car_lgraph` | NVMe | Waveshare 10.1-inch DSI; larger Vosk graph, suitable for measured 4 GB headroom |
 | `aosp_rpi5_car_16gb` | NVMe | Waveshare 10.1-inch DSI; selects the larger Vosk lgraph recognition profile |
 | `aosp_rpi5_car_emmc` | SD/eMMC partition layout | Waveshare 10.1-inch DSI |
 | `aosp_rpi5_car_hdmi` | NVMe | HDMI |
@@ -60,6 +61,12 @@ archive and selects it at runtime:
 lunch aosp_rpi5_car_16gb-caramel-userdebug
 m RPI5_AUDIO=usb -j8
 ```
+
+The same lgraph model is also available on a 4 GB Pi through
+`aosp_rpi5_car_lgraph-caramel-userdebug`. The current reference Pi measured
+2.44 GiB available with no swap and approximately 447 MiB peak host Vosk RSS
+while recognizing a short phrase; keep the compact product as the default for
+boards with less headroom or heavier workloads.
 
 The RAM capacity is a build-time choice; the product does not guess from the
 board at runtime. This makes the image reproducible and prevents a 4 GB board
