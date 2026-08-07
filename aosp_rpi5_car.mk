@@ -152,6 +152,10 @@ PRODUCT_PACKAGES += \
 # mode list. Apply the user-scoped 60 Hz settings at boot only for Waveshare
 # products; HDMI variants must retain their display's own mode policy.
 ifeq ($(RPI5_DISPLAY),waveshare10_1)
+RPI5_DISPLAY_REFRESH_RATE ?= 60.02573
+PRODUCT_VENDOR_PROPERTIES += \
+    ro.vendor.rpi5.display.refresh_rate=$(RPI5_DISPLAY_REFRESH_RATE)
+
 PRODUCT_PACKAGES += \
     CaramelWaveshareDisplayDefaults
 endif

@@ -8,5 +8,5 @@ android_app {
     certificate: "platform",
     privileged: true,
     product_specific: true,
-    sdk_version: "current",
+    sdk_version: "system_current",
 }
