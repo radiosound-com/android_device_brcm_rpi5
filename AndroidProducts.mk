@@ -7,6 +7,7 @@
 PRODUCT_MAKEFILES := \
     $(LOCAL_DIR)/aosp_rpi5.mk \
     $(LOCAL_DIR)/aosp_rpi5_car.mk \
+    $(LOCAL_DIR)/aosp_rpi5_car_16gb.mk \
     $(LOCAL_DIR)/aosp_rpi5_car_emmc.mk \
     $(LOCAL_DIR)/aosp_rpi5_car_hdmi.mk \
     $(LOCAL_DIR)/aosp_rpi5_car_emmc_hdmi.mk \
@@ -16,6 +17,7 @@ COMMON_LUNCH_CHOICES := \
     aosp_rpi5-trunk_staging-userdebug \
     aosp_rpi5_car-trunk_staging-userdebug \
     aosp_rpi5_car-caramel-userdebug \
+    aosp_rpi5_car_16gb-caramel-userdebug \
     aosp_rpi5_car_emmc-trunk_staging-userdebug \
     aosp_rpi5_car_emmc-caramel-userdebug \
     aosp_rpi5_car_hdmi-trunk_staging-userdebug \

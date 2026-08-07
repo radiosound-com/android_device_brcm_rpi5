@@ -9,6 +9,7 @@ The supported lunch targets are:
 | Product | Storage | Display |
 | --- | --- | --- |
 | `aosp_rpi5_car` | NVMe | Waveshare 10.1-inch DSI |
+| `aosp_rpi5_car_16gb` | NVMe | Waveshare 10.1-inch DSI; selects the larger Vosk lgraph recognition profile |
 | `aosp_rpi5_car_emmc` | SD/eMMC partition layout | Waveshare 10.1-inch DSI |
 | `aosp_rpi5_car_hdmi` | NVMe | HDMI |
 | `aosp_rpi5_car_emmc_hdmi` | SD/eMMC partition layout | HDMI |
@@ -50,6 +51,19 @@ avoids the boot-time input-registration race:
 lunch aosp_rpi5_car-caramel-userdebug
 m RPI5_AUDIO=usb -j8
 ```
+
+For a 16 GB Pi 5, use the model-capacity variant. It keeps the same NVMe,
+Waveshare, PCIe, and USB-audio defaults but installs the Vosk `0.22-lgraph`
+archive and selects it at runtime:
+
+```sh
+lunch aosp_rpi5_car_16gb-caramel-userdebug
+m RPI5_AUDIO=usb -j8
+```
+
+The RAM capacity is a build-time choice; the product does not guess from the
+board at runtime. This makes the image reproducible and prevents a 4 GB board
+from loading the larger model accidentally.
 
 The `trunk_staging` lunch targets remain available for comparison and for
 non-Caramel builds.
