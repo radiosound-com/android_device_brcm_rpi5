@@ -41,6 +41,9 @@ ifneq ($(wildcard vendor/radiosound/aurora-store/caramel_vanilla_aurora_store.mk
 $(call inherit-product, vendor/radiosound/aurora-store/caramel_vanilla_aurora_store.mk)
 endif
 $(call inherit-product, vendor/radiosound/voiceassistant/caramel_voice.mk)
+ifneq ($(wildcard vendor/radiosound/caramelstore/caramel_store.mk),)
+$(call inherit-product, vendor/radiosound/caramelstore/caramel_store.mk)
+endif
 
 # Salted Caramel Vanilla A2B profile. The native controller runs after ALSA
 # opens the PCM clock; alternate one-node hardware can select the other profile
