@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2026 Radio Sound, Inc.
+     SPDX-License-Identifier: Apache-2.0
+
+     Caramel Voice controls the active media session for explicit push-to-talk
+     requests such as "Play Eric Prydz Opus". It is a product privileged app,
+     and MEDIA_CONTENT_CONTROL is signature|privileged, so keep the allowlist
+     on the same product partition as the APK.
+-->
+<permissions>
+    <privapp-permissions package="com.radiosound.caramelvoice">
+        <permission name="android.permission.MEDIA_CONTENT_CONTROL"/>
+    </privapp-permissions>
+</permissions>

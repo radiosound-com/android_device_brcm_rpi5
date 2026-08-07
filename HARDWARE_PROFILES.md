@@ -96,6 +96,12 @@ while USB line inputs may expose stereo. A fixed stereo input profile makes
 AudioFlinger open an unsupported stream, leaving recognition with zero frames
 and repeated HAL `-38` errors.
 
+The ALSA producer and AudioFlinger consumer run asynchronously. Input transfer
+therefore waits for a complete requested period (up to 250 ms or four ALSA
+periods) instead of treating a short nonblocking MonoPipe read as real silence.
+This preserves capture continuity during USB startup without allowing a missing
+device to block indefinitely.
+
 ## NVMe bootloader prerequisite
 
 The Android image supplies the NVMe fstab and, for `RPI5_STORAGE=nvme`, adds
@@ -188,15 +194,18 @@ adb -s 192.168.1.56:5555 shell cmd audio get-connected-output-devices
 # Keep the down/up pair atomic; separate ADB calls may become a long press.
 adb -s 192.168.1.56:5555 shell cmd car_service inject-key -t 200 231
 adb -s 192.168.1.56:5555 logcat -d -s CaramelVoice Vosk TextToSpeech AudioRecord AudioTrack
+# From this repository on the host; also fails on AudioFlinger record overflow.
+ANDROID_SERIAL=192.168.1.56:5555 audio/tests/usb_capture_continuity_test.sh
 ```
 
 The expected properties are `usb` and `false`; `/proc/asound/cards` must list
 the attached USB device. With a microphone setup,
 `tinymix`/`dumpsys media.audio_flinger` should show the selected `Mic` source;
 the PTT log must show Vosk partial/final text and no `AudioRecord`/`AudioTrack`
-`ENODEV` errors. The first PTT invocation after boot may spend a few seconds
-loading the bundled Vosk model; play test audio only after `Vosk model ready`
-appears in logcat. A `Recognition error: 6` means
+`ENODEV` errors. Caramel Voice loads and prewarms the selected Vosk model when
+its interaction service becomes ready; if testing immediately after boot, play
+test audio only after `Vosk model ready and prewarmed` appears in logcat. A
+`Recognition error: 6` means
 `ERROR_SPEECH_TIMEOUT`, usually because the selected mixer source contains no
 speech or the test audio was sent before model loading completed.
 

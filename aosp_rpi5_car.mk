@@ -163,7 +163,8 @@ endif
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.software.activities_on_secondary_displays.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.activities_on_secondary_displays.xml \
     frameworks/native/data/etc/car_core_hardware.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/car_core_hardware.xml \
-    $(DEVICE_PATH)/permissions/default-permissions-rpi5.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/default-permissions/default-permissions-rpi5.xml
+    $(DEVICE_PATH)/permissions/default-permissions-rpi5.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/default-permissions/default-permissions-rpi5.xml \
+    $(DEVICE_PATH)/permissions/privapp-permissions-rpi5.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/privapp-permissions-rpi5.xml
 
 # Vehicle
 PRODUCT_PACKAGES += \
