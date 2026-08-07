@@ -37,20 +37,16 @@ $(call inherit-product, vendor/radiosound/osmand/caramel_vanilla_osmand.mk)
 ifneq ($(wildcard vendor/radiosound/templates-host/caramel_vanilla_templates_host.mk),)
 $(call inherit-product, vendor/radiosound/templates-host/caramel_vanilla_templates_host.mk)
 endif
-ifneq ($(wildcard vendor/radiosound/aurora-store/caramel_vanilla_aurora_store.mk),)
 $(call inherit-product, vendor/radiosound/aurora-store/caramel_vanilla_aurora_store.mk)
-endif
 $(call inherit-product, vendor/radiosound/voiceassistant/caramel_voice.mk)
-ifneq ($(wildcard vendor/radiosound/caramelstore/caramel_store.mk),)
 $(call inherit-product, vendor/radiosound/caramelstore/caramel_store.mk)
-endif
 
 # Salted Caramel Vanilla A2B profile. The native controller runs after ALSA
 # opens the PCM clock; alternate one-node hardware can select the other profile
 # at build time without changing the controller implementation.
 $(call soong_config_set,rpi_audio,a2b_init_routine,mr_data_main_2node_tdm4)
 
-$(call enforce-product-packages-exist,Bluetooth Keyguard Launcher2 OverviewApp RotaryIME RotaryPlayground com.android.ranging display_compat_config libnfc_ndef libvariablespeed pppd)
+$(call enforce-product-packages-exist,Bluetooth CaramelStore CaramelVanillaAuroraStore Keyguard Launcher2 OverviewApp RotaryIME RotaryPlayground com.android.ranging display_compat_config libnfc_ndef libvariablespeed pppd)
 
 # android.car
 PRODUCT_PACKAGES += \
