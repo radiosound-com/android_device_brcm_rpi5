@@ -9,6 +9,7 @@
 #
 
 CARAMEL_VOICE_ASR_MODEL := lgraph
+CARAMEL_VOICE_TTS := kokoro
 
 $(call inherit-product, device/brcm/rpi5/aosp_rpi5_car.mk)
 
