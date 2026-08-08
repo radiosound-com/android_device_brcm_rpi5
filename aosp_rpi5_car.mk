@@ -22,6 +22,11 @@ RPI5_DISPLAY ?= waveshare10_1
 # override for adapters or boards that are more stable at the default Gen 2:
 #   RPI5_PCIE_GEN=2 m bootimage
 RPI5_PCIE_GEN ?= 3
+# Keep the reference NVMe link out of PCIe ASPM and the controller out of
+# autonomous low-power states.  This favors throughput and reliability on the
+# always-powered automotive unit.  Builders can restore the upstream kernel
+# defaults with RPI5_NVME_POWER_POLICY=default.
+RPI5_NVME_POWER_POLICY ?= performance
 
 # Inherit device configuration
 $(call inherit-product, $(DEVICE_PATH)/device.mk)
@@ -146,6 +151,14 @@ PRODUCT_PACKAGES += \
     CaramelVoiceDefaults \
     SettingsProviderRpiOverlay \
     WifiRpiOverlay
+
+# Keep framework clients and Caramel's explicit PTT path on the same
+# product-selected recognizer. The base framework overlay selects Vosk; the
+# higher-priority overlay is installed only by Zipformer products.
+ifneq ($(filter zipformer-int8 zipformer-int8-highmem,$(CARAMEL_VOICE_ASR_MODEL)),)
+PRODUCT_PACKAGES += \
+    CaramelZipformerFrameworkOverlay
+endif
 
 # The Waveshare DSI panel has a 30 Hz default mode in this board's reported
 # mode list. Apply the user-scoped 60 Hz settings at boot only for Waveshare

@@ -9,11 +9,11 @@ The supported lunch targets are:
 | Product | Storage | Display |
 | --- | --- | --- |
 | `aosp_rpi5_car` | NVMe | Waveshare 10.1-inch DSI |
-| `aosp_rpi5_car_zipformer` | NVMe | Waveshare 10.1-inch DSI; streaming Zipformer INT8 profile |
-| `aosp_rpi5_car_zipformer_kokoro` | NVMe | Waveshare 10.1-inch DSI; streaming Zipformer INT8 + Kokoro TTS |
+| `aosp_rpi5_car_zipformer` | NVMe | Waveshare 10.1-inch DSI; high-quality streaming INT8 Zipformer, eSpeak TTS |
+| `aosp_rpi5_car_zipformer_kokoro` | NVMe | Waveshare 10.1-inch DSI; high-quality Zipformer ASR and neural Kokoro TTS |
 | `aosp_rpi5_car_lgraph` | NVMe | Waveshare 10.1-inch DSI; larger Vosk graph, suitable for measured 4 GB headroom |
 | `aosp_rpi5_car_lgraph_kokoro` | NVMe | Waveshare 10.1-inch DSI; larger Vosk graph + Kokoro TTS |
-| `aosp_rpi5_car_16gb` | NVMe | Waveshare 10.1-inch DSI; selects the higher-capacity Zipformer profile |
+| `aosp_rpi5_car_16gb` | NVMe | Waveshare 10.1-inch DSI; validated high-memory Zipformer/Kokoro pair with larger beam and context budget |
 | `aosp_rpi5_car_emmc` | SD/eMMC partition layout | Waveshare 10.1-inch DSI |
 | `aosp_rpi5_car_hdmi` | NVMe | HDMI |
 | `aosp_rpi5_car_emmc_hdmi` | SD/eMMC partition layout | HDMI |
@@ -56,29 +56,37 @@ lunch aosp_rpi5_car-caramel-userdebug
 m RPI5_AUDIO=usb -j8
 ```
 
-For a 16 GB Pi 5, use the model-capacity variant. It keeps the same NVMe,
-Waveshare, PCIe, and USB-audio defaults but selects the higher-coverage
-`zipformer-int8-highmem` profile and Kokoro TTS for speech output:
+For the highest-quality stack validated on the actively cooled 4 GB Pi 5, use
+the Zipformer/Kokoro product. It keeps the same NVMe, Waveshare, PCIe, and
+USB-audio defaults:
 
 ```sh
-lunch aosp_rpi5_car_16gb-caramel-userdebug
+lunch aosp_rpi5_car_zipformer_kokoro-caramel-userdebug
 m RPI5_AUDIO=usb -j8
 ```
 
-The highest-quality 4 GB option is `aosp_rpi5_car_zipformer-caramel-userdebug`
-(or `..._zipformer_kokoro` for the Kokoro TTS profile). The same Zipformer
-INT8 stream can also be selected on 4 GB systems that also want the Kokoro engine
-via `aosp_rpi5_car_zipformer_kokoro-caramel-userdebug`.
+The recognition-only `aosp_rpi5_car_zipformer-caramel-userdebug` variant keeps
+eSpeak as the lower-memory TTS fallback. For legacy compatibility with the
+larger Vosk graph, keep `aosp_rpi5_car_lgraph-caramel-userdebug`; that profile
+was previously measured at 2.44 GiB available RAM with approximately 447 MiB
+peak host Vosk RSS while recognizing a short phrase. Keep compact products as
+the default for boards with heavier unrelated workloads.
 
-For legacy compatibility with the larger Vosk graph, keep
-`aosp_rpi5_car_lgraph-caramel-userdebug`. That profile was previously measured
-at 2.44 GiB available RAM with approximately 447 MiB peak host Vosk RSS while
-recognizing a short phrase; keep compact products as default for boards with less
-headroom or heavier workloads.
+The INT8 Zipformer process held about 395--423 MiB RSS. With Kokoro, Spotify,
+OsmAnd, System UI, and the AAOS services resident, the current 4 GB reference
+Pi retained about 1.6 GiB available with no swap and zero sustained memory
+pressure. The Vosk lgraph products remain available as compatibility choices.
 
-The RAM capacity is a build-time choice; the product does not guess from the
-board at runtime. This makes the image reproducible and prevents a 4 GB board
-from loading the larger model accidentally.
+The 16 GB product now selects the same latency-validated model assets with a
+high-memory recognition profile (`zipformer-int8-highmem`) that increases beam and
+threading headroom for better robustness on long, music-heavy commands.
+Whisper `small.en` was accurate in evaluation but ran at roughly real-time on
+the 4 GB Pi, so it is not used as the streaming PTT backend. The larger-RAM
+product keeps room for a future optional second pass without making an
+unvalidated model part of the release image.
+
+Model capacity is a build-time choice; the product does not guess from the
+board at runtime. This keeps image contents and memory behavior reproducible.
 
 The `trunk_staging` lunch targets remain available for comparison and for
 non-Caramel builds.
@@ -115,17 +123,40 @@ device to block indefinitely.
 The Android image supplies the NVMe fstab and, for `RPI5_STORAGE=nvme`, adds
 `dtparam=pciex1` to the firmware configuration so Linux enables the PCIe link.
 The reference product defaults to PCIe Gen 3 through `RPI5_PCIE_GEN=3`, which
-adds `dtparam=pciex1_gen=3`. Select the supported Gen 2 fallback at build time
-with `RPI5_PCIE_GEN=2`; that leaves the link at the Raspberry Pi default:
+adds `dtparam=pciex1_gen=3`. It also defaults
+`RPI5_NVME_POWER_POLICY=performance`, which adds these kernel arguments:
+
+```text
+pcie_aspm.policy=performance nvme_core.default_ps_max_latency_us=0
+```
+
+The first disables PCIe Active State Power Management and Clock Power
+Management. The second disables NVMe Autonomous Power State Transitions. This
+keeps the always-powered automotive reference unit at full performance and
+avoids controller resets observed with a Samsung SSD 960 EVO under sustained
+model and filesystem reads. Restore the upstream kernel power-saving defaults
+for power-sensitive hardware with `RPI5_NVME_POWER_POLICY=default`.
+
+Select the supported Gen 2 fallback at build time with `RPI5_PCIE_GEN=2`; that
+leaves the link at the Raspberry Pi default while retaining the performance
+power policy:
 
 ```sh
 RPI5_PCIE_GEN=2 m bootimage
 ```
 
-Raspberry Pi documents Gen 3 as uncertified on Pi 5 and warns that it may be
-unstable. If the NVMe fails to enumerate, Android reboots, or storage errors
-appear under load, rebuild with `RPI5_PCIE_GEN=2`. The generated Gen 3 boot
-configuration contains both lines:
+Both build-time knobs can be combined when diagnosing an adapter:
+
+```sh
+RPI5_PCIE_GEN=2 RPI5_NVME_POWER_POLICY=default m bootimage
+```
+
+Raspberry Pi's [official PCIe documentation](https://www.raspberrypi.com/documentation/computers/configuration.html)
+documents Gen 3 as uncertified on Pi 5 and warns that it may be unstable. If
+the NVMe fails to enumerate, Android reboots, or storage errors appear under
+load, rebuild with `RPI5_PCIE_GEN=2`. The generated Gen 3 boot
+configuration contains both lines, and `rpiboot/cmdline.txt` contains the
+selected power-policy arguments:
 
 ```ini
 dtparam=pciex1

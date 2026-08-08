@@ -16,14 +16,15 @@
 -->
 
 <!--
-     Caramel Voice is the product's on-device PTT recognizer. Keep this as a
-     normal (user-controllable) dangerous-permission grant rather than a
-     privileged-permission allowlist entry: it gives the preinstalled
-     assistant microphone access on first boot while preserving Android's
-     permission model for later user changes.
+     Caramel Voice is the product's on-device PTT recognizer. Keep microphone
+     and local media metadata access as normal (user-controllable) dangerous
+     permission grants rather than privileged-permission allowlist entries.
+     This gives the preinstalled assistant capture and MediaStore context on
+     first boot while preserving Android's permission model for later changes.
 -->
 <exceptions>
     <exception package="com.radiosound.caramelvoice">
         <permission name="android.permission.RECORD_AUDIO" fixed="false"/>
+        <permission name="android.permission.READ_MEDIA_AUDIO" fixed="false"/>
     </exception>
 </exceptions>
