@@ -9,8 +9,11 @@ The supported lunch targets are:
 | Product | Storage | Display |
 | --- | --- | --- |
 | `aosp_rpi5_car` | NVMe | Waveshare 10.1-inch DSI |
+| `aosp_rpi5_car_zipformer` | NVMe | Waveshare 10.1-inch DSI; streaming Zipformer INT8 profile |
+| `aosp_rpi5_car_zipformer_kokoro` | NVMe | Waveshare 10.1-inch DSI; streaming Zipformer INT8 + Kokoro TTS |
 | `aosp_rpi5_car_lgraph` | NVMe | Waveshare 10.1-inch DSI; larger Vosk graph, suitable for measured 4 GB headroom |
-| `aosp_rpi5_car_16gb` | NVMe | Waveshare 10.1-inch DSI; selects the larger Vosk lgraph recognition profile |
+| `aosp_rpi5_car_lgraph_kokoro` | NVMe | Waveshare 10.1-inch DSI; larger Vosk graph + Kokoro TTS |
+| `aosp_rpi5_car_16gb` | NVMe | Waveshare 10.1-inch DSI; selects the higher-capacity Zipformer profile |
 | `aosp_rpi5_car_emmc` | SD/eMMC partition layout | Waveshare 10.1-inch DSI |
 | `aosp_rpi5_car_hdmi` | NVMe | HDMI |
 | `aosp_rpi5_car_emmc_hdmi` | SD/eMMC partition layout | HDMI |
@@ -54,19 +57,24 @@ m RPI5_AUDIO=usb -j8
 ```
 
 For a 16 GB Pi 5, use the model-capacity variant. It keeps the same NVMe,
-Waveshare, PCIe, and USB-audio defaults but installs the Vosk `0.22-lgraph`
-archive and selects it at runtime:
+Waveshare, PCIe, and USB-audio defaults but selects the higher-coverage
+`zipformer-int8-highmem` profile and Kokoro TTS for speech output:
 
 ```sh
 lunch aosp_rpi5_car_16gb-caramel-userdebug
 m RPI5_AUDIO=usb -j8
 ```
 
-The same lgraph model is also available on a 4 GB Pi through
-`aosp_rpi5_car_lgraph-caramel-userdebug`. The current reference Pi measured
-2.44 GiB available with no swap and approximately 447 MiB peak host Vosk RSS
-while recognizing a short phrase; keep the compact product as the default for
-boards with less headroom or heavier workloads.
+The highest-quality 4 GB option is `aosp_rpi5_car_zipformer-caramel-userdebug`
+(or `..._zipformer_kokoro` for the Kokoro TTS profile). The same Zipformer
+INT8 stream can also be selected on 4 GB systems that also want the Kokoro engine
+via `aosp_rpi5_car_zipformer_kokoro-caramel-userdebug`.
+
+For legacy compatibility with the larger Vosk graph, keep
+`aosp_rpi5_car_lgraph-caramel-userdebug`. That profile was previously measured
+at 2.44 GiB available RAM with approximately 447 MiB peak host Vosk RSS while
+recognizing a short phrase; keep compact products as default for boards with less
+headroom or heavier workloads.
 
 The RAM capacity is a build-time choice; the product does not guess from the
 board at runtime. This makes the image reproducible and prevents a 4 GB board
