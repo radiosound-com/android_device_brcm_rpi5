@@ -12,7 +12,7 @@ The supported lunch targets are:
 | `aosp_rpi5_car_lgraph` | NVMe | Waveshare 10.1-inch DSI; larger Vosk graph, suitable for measured 4 GB headroom |
 | `aosp_rpi5_car_zipformer` | NVMe | Waveshare 10.1-inch DSI; high-quality streaming INT8 Zipformer, eSpeak TTS |
 | `aosp_rpi5_car_zipformer_kokoro` | NVMe | Waveshare 10.1-inch DSI; high-quality Zipformer ASR and neural Kokoro TTS |
-| `aosp_rpi5_car_16gb` | NVMe | Waveshare 10.1-inch DSI; validated Zipformer/Kokoro pair with capacity reserved for future second-pass models |
+| `aosp_rpi5_car_16gb` | NVMe | Waveshare 10.1-inch DSI; validated high-memory Zipformer/Kokoro pair with larger beam and context budget |
 | `aosp_rpi5_car_emmc` | SD/eMMC partition layout | Waveshare 10.1-inch DSI |
 | `aosp_rpi5_car_hdmi` | NVMe | HDMI |
 | `aosp_rpi5_car_emmc_hdmi` | SD/eMMC partition layout | HDMI |
@@ -70,11 +70,13 @@ Pi retained about 1.6 GiB available with no swap and zero sustained memory
 pressure. The Vosk lgraph products remain available as compatibility choices;
 keep the compact product for boards with heavier unrelated workloads.
 
-The 16 GB product currently selects the same latency-validated
-Zipformer/Kokoro pair. Whisper `small.en` was accurate in evaluation but ran at
-roughly real time on the 4 GB Pi, so it is not used as the streaming PTT
-backend. The larger-RAM product leaves room for a future optional second pass
-without making an unvalidated model part of the release image.
+The 16 GB product now selects the same latency-validated model assets with a
+high-memory recognition profile (`zipformer-int8-highmem`) that increases beam and
+threading headroom for better robustness on long, music-heavy commands.
+Whisper `small.en` was accurate in evaluation but ran at roughly real-time on
+the 4 GB Pi, so it is not used as the streaming PTT backend. The larger-RAM
+product keeps room for a future optional second pass without making an
+unvalidated model part of the release image.
 
 Model capacity is a build-time choice; the product does not guess from the
 board at runtime. This keeps image contents and memory behavior reproducible.

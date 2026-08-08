@@ -155,7 +155,7 @@ PRODUCT_PACKAGES += \
 # Keep framework clients and Caramel's explicit PTT path on the same
 # product-selected recognizer. The base framework overlay selects Vosk; the
 # higher-priority overlay is installed only by Zipformer products.
-ifeq ($(CARAMEL_VOICE_ASR_MODEL),zipformer-int8)
+ifneq ($(filter zipformer-int8 zipformer-int8-highmem,$(CARAMEL_VOICE_ASR_MODEL)),)
 PRODUCT_PACKAGES += \
     CaramelZipformerFrameworkOverlay
 endif

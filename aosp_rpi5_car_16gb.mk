@@ -8,7 +8,7 @@
 # independently overridable at build time.
 #
 
-CARAMEL_VOICE_ASR_MODEL := zipformer-int8
+CARAMEL_VOICE_ASR_MODEL := zipformer-int8-highmem
 CARAMEL_VOICE_TTS := kokoro
 
 $(call inherit-product, device/brcm/rpi5/aosp_rpi5_car.mk)
