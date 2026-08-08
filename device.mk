@@ -171,6 +171,9 @@ PRODUCT_PACKAGES += \
 
 # Ramdisk
 RPI5_STORAGE ?= emmc
+# Non-Caramel products retain the upstream PCIe/NVMe power-management policy.
+# The Caramel NVMe reference product overrides this to "performance".
+RPI5_NVME_POWER_POLICY ?= default
 ifeq ($(RPI5_STORAGE),nvme)
 RPI5_FSTAB := $(DEVICE_PATH)/ramdisk/fstab.rpi5.nvme
 else ifeq ($(RPI5_STORAGE),emmc)

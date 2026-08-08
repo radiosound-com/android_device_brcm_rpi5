@@ -8,10 +8,10 @@
 # independently overridable at build time.
 #
 
-CARAMEL_VOICE_ASR_MODEL := lgraph
+CARAMEL_VOICE_ASR_MODEL := zipformer-int8
 CARAMEL_VOICE_TTS := kokoro
 
 $(call inherit-product, device/brcm/rpi5/aosp_rpi5_car.mk)
 
 PRODUCT_NAME := aosp_rpi5_car_16gb
-PRODUCT_MODEL := Pi 5 16GB
+PRODUCT_MODEL := Pi 5 16GB Neural Voice
