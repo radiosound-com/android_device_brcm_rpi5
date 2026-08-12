@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2026 Radio Sound, Inc.
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <!-- Use the app's declared full-screen launcher entry, as the app grid does. -->
+    <string-array name="config_defaultDockApps" translatable="false">
+        <item>com.android.car.settings/com.android.car.settings.Settings_Launcher_Homepage</item>
+        <item>com.android.car.radio/com.android.car.radio.service.RadioAppService</item>
+        <item>com.android.car.dialer/com.android.car.dialer.ui.TelecomActivity</item>
+        <item>net.osmand.dev/net.osmand.plus.activities.NightlyFullUiLauncher</item>
+    </string-array>
+</resources>

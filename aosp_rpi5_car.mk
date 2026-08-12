@@ -149,6 +149,7 @@ PRODUCT_PACKAGES += \
     BluetoothRpiOverlay \
     CarServiceRpiOverlay \
     CaramelVoiceDefaults \
+    CarSystemUIRpiOverlay \
     SettingsProviderRpiOverlay \
     WifiRpiOverlay
 
