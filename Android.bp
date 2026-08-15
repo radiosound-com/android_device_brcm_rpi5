@@ -4,3 +4,14 @@
 
 soong_namespace {
 }
+
+// Android 17's default source snapshot leaves these host-test defaults outside
+// the Raspberry Pi product manifest.  Keep the unused test graph parseable
+// without changing the product modules or their runtime dependencies.
+java_defaults {
+    name: "tradefed_defaults",
+}
+
+java_defaults {
+    name: "tradefed_errorprone_defaults",
+}
