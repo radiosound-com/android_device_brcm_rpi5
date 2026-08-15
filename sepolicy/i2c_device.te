@@ -1,0 +1,4 @@
+# Copyright 2026 Radio Sound, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+type i2c_device, dev_type;

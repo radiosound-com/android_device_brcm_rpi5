@@ -6,6 +6,28 @@
 
 DEVICE_PATH := device/brcm/rpi5
 
+# Caramel's USB audio devices can expose ALSA nodes after Android's USB host
+# callback.  The product-specific release config selects the compatible Aconfig
+# defaults without changing unrelated AOSP products.
+PRODUCT_RELEASE_CONFIG_MAPS += \
+    $(DEVICE_PATH)/release/release_config_map.textproto
+
+# Caramel Vanilla's reference unit uses the Waveshare 10.1-inch panel and an
+# NVMe root device. Explicit product variants below select other supported
+# storage/display combinations without editing the device tree by hand.
+RPI5_STORAGE ?= nvme
+RPI5_DISPLAY ?= waveshare10_1
+# Raspberry Pi 5's PCIe Gen 3 mode is faster but not certified by Raspberry
+# Pi.  Keep the reference NVMe product fast while retaining a product/build
+# override for adapters or boards that are more stable at the default Gen 2:
+#   RPI5_PCIE_GEN=2 m bootimage
+RPI5_PCIE_GEN ?= 3
+# Keep the reference NVMe link out of PCIe ASPM and the controller out of
+# autonomous low-power states.  This favors throughput and reliability on the
+# always-powered automotive unit.  Builders can restore the upstream kernel
+# defaults with RPI5_NVME_POWER_POLICY=default.
+RPI5_NVME_POWER_POLICY ?= performance
+
 # Inherit device configuration
 $(call inherit-product, $(DEVICE_PATH)/device.mk)
 
@@ -15,7 +37,21 @@ PRODUCT_CHARACTERISTICS := automotive,nosdcard
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/full_base.mk)
 $(call inherit-product, packages/services/Car/car_product/build/car.mk)
-$(call enforce-product-packages-exist,Bluetooth Keyguard Launcher2 OverviewApp RotaryIME RotaryPlayground com.android.ranging libnfc_ndef libvariablespeed pppd vendor_tracing_descriptors)
+# Copyright (C) 2026 Radio Sound, Inc. for the Caramel Vanilla product integration.
+$(call inherit-product, vendor/radiosound/osmand/caramel_vanilla_osmand.mk)
+ifneq ($(wildcard vendor/radiosound/templates-host/caramel_vanilla_templates_host.mk),)
+$(call inherit-product, vendor/radiosound/templates-host/caramel_vanilla_templates_host.mk)
+endif
+$(call inherit-product, vendor/radiosound/aurora-store/caramel_vanilla_aurora_store.mk)
+$(call inherit-product, vendor/radiosound/voiceassistant/caramel_voice.mk)
+$(call inherit-product, vendor/radiosound/caramelstore/caramel_store.mk)
+
+# Salted Caramel Vanilla A2B profile. The native controller runs after ALSA
+# opens the PCM clock; alternate one-node hardware can select the other profile
+# at build time without changing the controller implementation.
+$(call soong_config_set,rpi_audio,a2b_init_routine,mr_data_main_2node_tdm4)
+
+$(call enforce-product-packages-exist,Bluetooth CaramelStore CaramelVanillaAuroraStore Keyguard Launcher2 OverviewApp RotaryIME RotaryPlayground com.android.ranging display_compat_config libnfc_ndef libvariablespeed pppd vendor_tracing_descriptors)
 
 # android.car
 PRODUCT_PACKAGES += \
@@ -67,6 +103,14 @@ PRODUCT_PACKAGES += \
     canhaldump \
     canhalsend
 
+# Radio Sound Salted Caramel Vanilla CAN configuration and tools.
+PRODUCT_COPY_FILES += \
+    $(DEVICE_PATH)/car/canbus_config.proto:$(TARGET_COPY_OUT_VENDOR)/etc/canbus_config.pb
+
+PRODUCT_PACKAGES += \
+    canhalconfigurator-aidl
+
+
 # Display
 PRODUCT_COPY_FILES += \
     $(DEVICE_PATH)/car/display_settings.xml:$(TARGET_COPY_OUT_VENDOR)/etc/display_settings.xml
@@ -104,13 +148,36 @@ PRODUCT_PACKAGES += \
     AndroidCarRpiOverlay \
     BluetoothRpiOverlay \
     CarServiceRpiOverlay \
+    CaramelVoiceDefaults \
     SettingsProviderRpiOverlay \
     WifiRpiOverlay
+
+# Keep framework clients and Caramel's explicit PTT path on the same
+# product-selected recognizer. The base framework overlay selects Vosk; the
+# higher-priority overlay is installed only by Zipformer products.
+ifneq ($(filter zipformer-int8 zipformer-int8-highmem,$(CARAMEL_VOICE_ASR_MODEL)),)
+PRODUCT_PACKAGES += \
+    CaramelZipformerFrameworkOverlay
+endif
+
+# The Waveshare DSI panel has a 30 Hz default mode in this board's reported
+# mode list. Apply the user-scoped 60 Hz settings at boot only for Waveshare
+# products; HDMI variants must retain their display's own mode policy.
+ifeq ($(RPI5_DISPLAY),waveshare10_1)
+RPI5_DISPLAY_REFRESH_RATE ?= 60.02573
+PRODUCT_VENDOR_PROPERTIES += \
+    ro.vendor.rpi5.display.refresh_rate=$(RPI5_DISPLAY_REFRESH_RATE)
+
+PRODUCT_PACKAGES += \
+    CaramelWaveshareDisplayDefaults
+endif
 
 # Permissions
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.software.activities_on_secondary_displays.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.activities_on_secondary_displays.xml \
-    frameworks/native/data/etc/car_core_hardware.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/car_core_hardware.xml
+    frameworks/native/data/etc/car_core_hardware.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/car_core_hardware.xml \
+    $(DEVICE_PATH)/permissions/default-permissions-rpi5.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/default-permissions/default-permissions-rpi5.xml \
+    $(DEVICE_PATH)/permissions/privapp-permissions-rpi5.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/privapp-permissions-rpi5.xml
 
 # Vehicle
 PRODUCT_PACKAGES += \

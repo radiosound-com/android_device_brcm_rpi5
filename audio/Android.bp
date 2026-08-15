@@ -3,6 +3,36 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+soong_config_module_type {
+    name: "rpi_a2b_cc_defaults",
+    module_type: "cc_defaults",
+    config_namespace: "rpi_audio",
+    variables: ["a2b_init_routine"],
+    properties: ["cflags"],
+}
+
+soong_config_string_variable {
+    name: "a2b_init_routine",
+    values: [
+        "mr_data_main_2node_tdm4",
+        "mr_data_main_1node",
+    ],
+}
+
+rpi_a2b_cc_defaults {
+    name: "rpi_a2b_init_defaults",
+    soong_config_variables: {
+        a2b_init_routine: {
+            mr_data_main_2node_tdm4: {
+                cflags: ["-DA2B_INIT_ROUTINE=1"],
+            },
+            mr_data_main_1node: {
+                cflags: ["-DA2B_INIT_ROUTINE=2"],
+            },
+        },
+    },
+}
+
 cc_defaults {
     name: "aidlaudioservice_rpi_defaults",
     vendor: true,
@@ -53,10 +83,11 @@ cc_defaults {
 
 cc_library {
     name: "libaudioserviceimpl-rpi",
-    defaults: ["aidlaudioservice_rpi_defaults"],
+    defaults: ["aidlaudioservice_rpi_defaults", "rpi_a2b_init_defaults"],
     export_include_dirs: ["include"],
     srcs: [
         "AidlConversionXsdc.cpp",
+        "a2b/A2bController.cpp",
         "AudioPolicyConfigXmlConverter.cpp",
         "Bluetooth.cpp",
         "CapEngineConfigXmlConverter.cpp",
@@ -281,7 +312,6 @@ apex {
     prebuilts: [
         "android.hardware.audio.service.rpi.rc",
         "android.hardware.audio.service.rpi.xml",
-        "android.hardware.bluetooth.audio.xml",
     ],
     required: [
         "aidl_audio_set_configurations_bfbs",

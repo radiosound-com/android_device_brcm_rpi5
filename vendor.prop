@@ -1,6 +1,9 @@
 # Audio
-persist.vendor.audio.device=hdmi0
-ro.boot.audio.tinyalsa.simulate_input=true
+# Audio routing is selected in device.mk with RPI5_AUDIO. The default is the
+# Salted Caramel A2B/I2S path; use RPI5_AUDIO=usb for USB microphone/speaker
+# development hardware.
+persist.vendor.gps.device=/dev/ttyACM0
+ro.kernel.android.gps=ttyACM0
 ro.config.media_vol_default=20
 ro.config.media_vol_steps=25
 
@@ -48,7 +51,7 @@ persist.vendor.ffmpeg_codec2.v4l2.h265=true
 
 # Graphics
 vendor.hwc.drm.ctm=DRM_OR_IGNORE
-vendor.hwc.drm.force_mode=1920x1080
+vendor.hwc.drm.force_mode=1280x800
 
 # Lockscreen
 ro.lockscreen.disable.default=true
@@ -62,6 +65,9 @@ persist.device_config.mglru_native.lru_gen_config=core
 
 # Virtualization
 ro.boot.hypervisor.vm.supported=1
+
+# ADB for Salted Caramel Vanilla development hardware.
+persist.adb.tcp.port=5555
 
 # Wifi
 ro.boot.wificountrycode=00

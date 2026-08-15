@@ -48,6 +48,7 @@ class Mixer {
     ndk::ScopedAStatus setMasterVolume(float volume);
     ndk::ScopedAStatus setMicGain(float gain);
     ndk::ScopedAStatus setMicMute(bool muted);
+    ndk::ScopedAStatus setCaptureSource(const std::string& source);
     ndk::ScopedAStatus setVolumes(const std::vector<float>& volumes);
 
   private:

@@ -6,6 +6,32 @@
 
 DEVICE_PATH := device/brcm/rpi5
 
+# The reference unit uses the Salted Caramel A2B/I2S path. A USB audio profile
+# is available for development units whose microphone and speaker are a USB
+# sound card. Keep this a product-time option so the default image remains
+# unchanged:
+#
+#   m RPI5_AUDIO=usb -j8
+RPI5_AUDIO ?= a2b
+ifeq ($(RPI5_AUDIO),a2b)
+RPI5_AUDIO_DEVICE := rpi
+RPI5_SIMULATE_INPUT := true
+else ifeq ($(RPI5_AUDIO),usb)
+RPI5_AUDIO_DEVICE := usb
+RPI5_SIMULATE_INPUT := false
+RPI5_AUDIO_USB_CAPTURE_SOURCE ?= Mic
+else
+$(error Unsupported RPI5_AUDIO '$(RPI5_AUDIO)'; use a2b or usb)
+endif
+
+PRODUCT_VENDOR_PROPERTIES += \
+    persist.vendor.audio.device=$(RPI5_AUDIO_DEVICE) \
+    ro.boot.audio.tinyalsa.simulate_input=$(RPI5_SIMULATE_INPUT)
+ifeq ($(RPI5_AUDIO),usb)
+PRODUCT_VENDOR_PROPERTIES += \
+    persist.vendor.audio.usb.capture_source=$(RPI5_AUDIO_USB_CAPTURE_SOURCE)
+endif
+
 $(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit_only.mk)
 $(call inherit-product, frameworks/native/build/tablet-7in-xhdpi-2048-dalvik-heap.mk)
 
@@ -108,6 +134,15 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     com.android.hardware.health.rpi
 
+# GNSS
+# The implementation is consumed directly from Mark777a's Apache-2.0 AIDL v6
+# HAL repository by the Caramel Vanilla manifest.
+PRODUCT_PACKAGES += \
+    android.hardware.gnss-service.rpi
+
+PRODUCT_COPY_FILES += \
+    frameworks/native/data/etc/android.hardware.location.gps.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.location.gps.xml
+
 # Kernel
 PRODUCT_COPY_FILES += \
     $(DEVICE_PATH)-kernel/Image:$(PRODUCT_OUT)/kernel
@@ -135,9 +170,21 @@ PRODUCT_PACKAGES += \
     com.android.hardware.power
 
 # Ramdisk
+RPI5_STORAGE ?= emmc
+# Non-Caramel products retain the upstream PCIe/NVMe power-management policy.
+# The Caramel NVMe reference product overrides this to "performance".
+RPI5_NVME_POWER_POLICY ?= default
+ifeq ($(RPI5_STORAGE),nvme)
+RPI5_FSTAB := $(DEVICE_PATH)/ramdisk/fstab.rpi5.nvme
+else ifeq ($(RPI5_STORAGE),emmc)
+RPI5_FSTAB := $(DEVICE_PATH)/ramdisk/fstab.rpi5.emmc
+else
+$(error Unsupported RPI5_STORAGE '$(RPI5_STORAGE)'; use nvme or emmc)
+endif
+
 PRODUCT_COPY_FILES += \
-    $(DEVICE_PATH)/ramdisk/fstab.rpi5:$(TARGET_COPY_OUT_RAMDISK)/fstab.rpi5 \
-    $(DEVICE_PATH)/ramdisk/fstab.rpi5:$(TARGET_COPY_OUT_VENDOR)/etc/fstab.rpi5 \
+    $(RPI5_FSTAB):$(TARGET_COPY_OUT_RAMDISK)/fstab.rpi5 \
+    $(RPI5_FSTAB):$(TARGET_COPY_OUT_VENDOR)/etc/fstab.rpi5 \
     $(DEVICE_PATH)/ramdisk/init.rpi5.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/hw/init.rpi5.rc \
     $(DEVICE_PATH)/ramdisk/init.rpi5.usb.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/hw/init.rpi5.usb.rc \
     $(DEVICE_PATH)/ramdisk/ueventd.rpi5.rc:$(TARGET_COPY_OUT_VENDOR)/etc/ueventd.rc
@@ -148,7 +195,9 @@ PRODUCT_COPY_FILES += \
     $(DEVICE_PATH)/seccomp_policy/mediaswcodec.policy:$(TARGET_COPY_OUT_VENDOR)/etc/seccomp_policy/mediaswcodec.policy
 
 # Soong
-PRODUCT_SOONG_NAMESPACES += $(DEVICE_PATH)
+PRODUCT_SOONG_NAMESPACES += \
+    $(DEVICE_PATH) \
+    external/mark777a/AOSP-AIDL-v6-GNSS-HAL/vendor/brcm/interfaces/gnss/aidl
 
 # Storage
 $(call inherit-product, $(SRC_TARGET_DIR)/product/emulated_storage.mk)

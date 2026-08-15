@@ -1,0 +1,8 @@
+# Copyright (C) 2026 Radio Sound, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: "Caramel Vanilla product release configuration"
+default_containers: "product"
+default_containers: "system"
+default_containers: "system_ext"
+default_containers: "vendor"

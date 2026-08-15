@@ -1,4 +1,5 @@
 service vendor.usb_gadget-rpi /apex/com.android.hardware.usb.gadget.rpi/bin/hw/android.hardware.usb.gadget-service.rpi
     class hal
+    disabled
     user system
     group system shell mtp

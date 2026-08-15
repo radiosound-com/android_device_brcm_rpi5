@@ -82,6 +82,10 @@ on boot
     chown system system /config/usb_gadget/g1/strings/0x409/product
     chown system system /config/usb_gadget/g1/strings/0x409/serialnumber
 
+    # The gadget HAL is disabled in its service definition so it cannot race
+    # this configfs setup.
+    start vendor.usb_gadget-rpi
+
 on property:sys.usb.controller=*
     mount functionfs adb /dev/usb-ffs/adb rmode=0770,fmode=0660,uid=2000,gid=2000,no_disconnect=1
     mount functionfs mtp /dev/usb-ffs/mtp rmode=0770,fmode=0660,uid=1024,gid=1024,no_disconnect=1

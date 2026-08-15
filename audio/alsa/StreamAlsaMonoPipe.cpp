@@ -15,6 +15,8 @@
  */
 
 #define LOG_TAG "AHAL_StreamAlsaMonoPipe"
+#include <algorithm>
+#include <chrono>
 #include <Log.h>
 
 #include <media/AidlConversionCppNdk.h>
@@ -114,10 +116,24 @@ StreamAlsaMonoPipe::~StreamAlsaMonoPipe() {
     if (mIsInput) {
         const size_t i = 0;  // For the input case, only support a single device.
         LOG(VERBOSE) << __func__ << ": reading from sink " << i;
-        ssize_t framesRead = mSources[i]->read(buffer, frameCount);
-        LOG_IF(FATAL, framesRead < 0) << "Error reading from the pipe: " << framesRead;
-        if (ssize_t framesMissing = static_cast<ssize_t>(frameCount) - framesRead;
-            framesMissing > 0) {
+        size_t framesRead = 0;
+        // MonoPipeReader::read() is nonblocking. Pace the caller until a complete
+        // capture period is available so a USB scheduling race does not become silence.
+        const int64_t periodUs =
+                static_cast<int64_t>(frameCount) * MICROS_PER_SECOND / mSampleRate;
+        const auto waitLimit =
+                std::chrono::microseconds(std::max<int64_t>(250'000, periodUs * 4));
+        const auto deadline = std::chrono::steady_clock::now() + waitLimit;
+        while (framesRead < frameCount && mIoThreadIsRunning) {
+            ssize_t readResult = mSources[i]->read(
+                    static_cast<char*>(buffer) + framesRead * mFrameSizeBytes,
+                    frameCount - framesRead);
+            LOG_IF(FATAL, readResult < 0) << "Error reading from the pipe: " << readResult;
+            framesRead += static_cast<size_t>(readResult);
+            if (framesRead == frameCount || std::chrono::steady_clock::now() >= deadline) break;
+            usleep(500);
+        }
+        if (size_t framesMissing = frameCount - framesRead; framesMissing > 0) {
             LOG(WARNING) << __func__ << ": incomplete data received, inserting " << framesMissing
                          << " frames of silence";
             memset(static_cast<char*>(buffer) + framesRead * mFrameSizeBytes, 0,

@@ -29,7 +29,23 @@ VERSION=RaspberryVanillaAOSP17
 DATE=$(date +%Y%m%d)
 TARGET=$(echo ${TARGET_PRODUCT} | sed 's/^aosp_//')
 IMGNAME=${VERSION}-${DATE}-${TARGET}.img
-IMGSIZE=15360000000
+
+# Keep the historical 15.3 GB default, but allow a reproducible image to be
+# sized for the actual target medium. The last primary partition (userdata)
+# consumes all remaining sectors after the fixed boot/system/vendor/metadata
+# layout, so a larger image directly yields a larger userdata filesystem.
+DEFAULT_IMAGE_SIZE_BYTES=15360000000
+IMGSIZE=${RPI5_IMAGE_SIZE_BYTES:-${DEFAULT_IMAGE_SIZE_BYTES}}
+if ! [[ ${IMGSIZE} =~ ^[0-9]+$ ]]; then
+  exit_with_error "RPI5_IMAGE_SIZE_BYTES must be a decimal byte count"
+fi
+
+# Leave room for the fixed partitions and fdisk alignment. This catches a
+# typo before fallocate/truncate creates an unusable image.
+MIN_IMAGE_SIZE_BYTES=7700000000
+if [ ${IMGSIZE} -lt ${MIN_IMAGE_SIZE_BYTES} ]; then
+  exit_with_error "RPI5_IMAGE_SIZE_BYTES is too small for the RPi 5 layout"
+fi
 
 BOOT_PARTITION_SIZE=128
 SYSTEM_PARTITION_SIZE=3072
@@ -41,8 +57,10 @@ if [ -f ${ANDROID_PRODUCT_OUT}/${IMGNAME} ]; then
   exit_with_error "${ANDROID_PRODUCT_OUT}/${IMGNAME} already exists!"
 fi
 
-echo "Creating image file ${ANDROID_PRODUCT_OUT}/${IMGNAME}..."
-sudo fallocate -l ${IMGSIZE} ${ANDROID_PRODUCT_OUT}/${IMGNAME}
+echo "Creating ${IMGSIZE}-byte image file ${ANDROID_PRODUCT_OUT}/${IMGNAME}..."
+# A sparse file avoids allocating all unused userdata blocks on the build
+# host; the final raw image still has the requested full logical capacity.
+truncate -s ${IMGSIZE} ${ANDROID_PRODUCT_OUT}/${IMGNAME}
 sync
 
 echo "Creating partitions..."

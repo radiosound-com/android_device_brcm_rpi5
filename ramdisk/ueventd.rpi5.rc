@@ -6,6 +6,10 @@
 /dev/v4l-subdev*                                                             0660   system     camera
 /dev/video*                                                                  0660   system     camera
 
+# USB GNSS receivers (u-blox/VK-162 and similar NMEA dongles)
+/dev/ttyACM*                                                                 0660   gps        system
+/dev/ttyUSB*                                                                 0660   gps        system
+
 # CEC
 /dev/cec0                                                                    0660   system     graphics
 /dev/cec1                                                                    0660   system     graphics
@@ -16,6 +20,12 @@
 # FFmpeg
 /dev/media0                                                                  0660   media      media
 /dev/video19                                                                 0660   media      media
+
+# GPS
+/dev/ttyACM0                                                                 0660   gps        gps
+
+# A2B
+/dev/i2c-[0-9]+                                                              0660   audioserver audio
 
 # USB
 /sys/class/udc/1000480000.usb  current_speed                                 0664   system     system

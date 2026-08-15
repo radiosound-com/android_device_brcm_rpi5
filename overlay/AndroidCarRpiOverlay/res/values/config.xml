@@ -42,6 +42,11 @@
     <!-- The name of the package that will hold the dialer role by default. -->
     <string name="config_defaultDialer" translatable="false">com.android.car.dialer</string>
 
+    <!-- Caramel Vanilla offline voice interaction and speech recognition defaults. -->
+    <string name="config_defaultAssistant" translatable="false">com.radiosound.caramelvoice</string>
+    <string name="config_systemSpeechRecognizer" translatable="false">com.radiosound.caramelvoice</string>
+    <string name="config_defaultOnDeviceSpeechRecognitionService" translatable="false">com.radiosound.caramelvoice/.VoskRecognitionService</string>
+
     <!-- Whether a software navigation bar should be shown. NOTE: in the future this may be
          autodetected from the Configuration. -->
     <bool name="config_showNavigationBar">true</bool>

@@ -1,1 +1,3 @@
 get_prop(hal_audio_default, vendor_audio_config_prop)
+
+allow hal_audio_default i2c_device:chr_file { getattr open read write ioctl };
