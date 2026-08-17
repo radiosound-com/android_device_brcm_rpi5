@@ -19,6 +19,7 @@
 #include <chrono>
 #include <Log.h>
 
+#include <audio_utils/clock.h>
 #include <media/AidlConversionCppNdk.h>
 
 #include "core-impl/StreamAlsaMonoPipe.h"
