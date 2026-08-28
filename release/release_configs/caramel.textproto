@@ -4,4 +4,5 @@
 name: "caramel"
 inherits: "trunk_staging"
 aconfig_value_sets: "aconfig_value_set-vendor_radiosound_caramel_usb"
+aconfig_value_sets: "aconfig_value_set-vendor_radiosound_caramel_audio"
 release_config_type: RELEASE_CONFIG

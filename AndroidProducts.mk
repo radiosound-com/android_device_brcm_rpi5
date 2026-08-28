@@ -15,6 +15,14 @@ PRODUCT_MAKEFILES := \
     $(LOCAL_DIR)/aosp_rpi5_car_emmc.mk \
     $(LOCAL_DIR)/aosp_rpi5_car_hdmi.mk \
     $(LOCAL_DIR)/aosp_rpi5_car_emmc_hdmi.mk \
+    $(LOCAL_DIR)/aosp_rpi5_car_4gb_nvme_waveshare.mk \
+    $(LOCAL_DIR)/aosp_rpi5_car_4gb_nvme_hdmi.mk \
+    $(LOCAL_DIR)/aosp_rpi5_car_4gb_sd_waveshare.mk \
+    $(LOCAL_DIR)/aosp_rpi5_car_4gb_sd_hdmi.mk \
+    $(LOCAL_DIR)/aosp_rpi5_car_16gb_nvme_waveshare.mk \
+    $(LOCAL_DIR)/aosp_rpi5_car_16gb_nvme_hdmi.mk \
+    $(LOCAL_DIR)/aosp_rpi5_car_16gb_sd_waveshare.mk \
+    $(LOCAL_DIR)/aosp_rpi5_car_16gb_sd_hdmi.mk \
     $(LOCAL_DIR)/aosp_rpi5_tv.mk
 
 COMMON_LUNCH_CHOICES := \
@@ -32,4 +40,12 @@ COMMON_LUNCH_CHOICES := \
     aosp_rpi5_car_hdmi-caramel-userdebug \
     aosp_rpi5_car_emmc_hdmi-trunk_staging-userdebug \
     aosp_rpi5_car_emmc_hdmi-caramel-userdebug \
+    aosp_rpi5_car_4gb_nvme_waveshare-caramel-userdebug \
+    aosp_rpi5_car_4gb_nvme_hdmi-caramel-userdebug \
+    aosp_rpi5_car_4gb_sd_waveshare-caramel-userdebug \
+    aosp_rpi5_car_4gb_sd_hdmi-caramel-userdebug \
+    aosp_rpi5_car_16gb_nvme_waveshare-caramel-userdebug \
+    aosp_rpi5_car_16gb_nvme_hdmi-caramel-userdebug \
+    aosp_rpi5_car_16gb_sd_waveshare-caramel-userdebug \
+    aosp_rpi5_car_16gb_sd_hdmi-caramel-userdebug \
     aosp_rpi5_tv-trunk_staging-userdebug

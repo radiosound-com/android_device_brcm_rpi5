@@ -1,0 +1,12 @@
+service vendor.caramel-vanilla-bootctl /vendor/bin/hw/caramel-vanilla-bootctl-service
+    class early_hal
+    user root
+    group root
+    interface aidl android.hardware.boot.IBootControl/default
+    seclabel u:r:hal_bootctl_default:s0
+
+on property:vendor.rpi5.ab.trial=1
+    setprop sys.powerctl "reboot,0 tryboot"
+
+on property:sys.boot_completed=1
+    exec_background - root root -- /system/bin/bootctl mark-boot-successful

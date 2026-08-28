@@ -1,0 +1,33 @@
+// Copyright 2026 Radio Sound, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
+cc_binary {
+    name: "caramel-vanilla-bootctl-service",
+    vendor: true,
+    relative_install_path: "hw",
+    srcs: [
+        "BootControl.cpp",
+        "main.cpp",
+    ],
+    shared_libs: [
+        "libbinder_ndk",
+        "libbase",
+        "liblog",
+    ],
+    static_libs: [
+        "android.hardware.boot-V1-ndk",
+    ],
+    init_rc: ["caramel-vanilla-ab.rc"],
+    vintf_fragment_modules: ["caramel-vanilla-bootctl.xml"],
+}
+
+vintf_fragment {
+    name: "caramel-vanilla-bootctl.xml",
+    src: "caramel-vanilla-bootctl.xml",
+    vendor: true,
+}
+
+sh_binary {
+    name: "rpi5-ab-tryboot",
+    src: "rpi5-ab-tryboot.sh",
+}

@@ -1,12 +1,9 @@
-# Android fstab file.
-# The filesystem that contains the filesystem checker binary (typically /system) cannot
-# specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+# Android fstab for the A/B Raspberry Pi 5 SD-card release.
 
 #<src>                                     <mnt_point>  <type>  <mnt_flags and options>            <fs_mgr_flags>
 /dev/block/by-name/system                  /system      ext4    ro,barrier=1                       wait,first_stage_mount,slotselect
 /dev/block/by-name/vendor                  /vendor      ext4    ro,barrier=1                       wait,first_stage_mount,slotselect
 /dev/block/by-name/misc                    /misc        emmc    defaults                           wait
-/dev/block/by-name/metadata                /metadata    ext4    nodev,noatime,nosuid               wait,check,formattable,first_stage_mount
 /dev/block/by-name/userdata                /data        ext4    nodev,noatime,nosuid,errors=panic  wait,check,formattable,quota
 /devices/platform/axi/*.pcie/*.usb/*/usb*  auto         auto    defaults                           voldmanaged=usb:auto
 /devices/platform/axi/*.usb/usb*           auto         auto    defaults                           voldmanaged=usb:auto

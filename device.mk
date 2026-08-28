@@ -6,13 +6,11 @@
 
 DEVICE_PATH := device/brcm/rpi5
 
-# The reference unit uses the Salted Caramel A2B/I2S path. A USB audio profile
-# is available for development units whose microphone and speaker are a USB
-# sound card. Keep this a product-time option so the default image remains
-# unchanged:
+# Public Caramel Vanilla images use USB audio. A private product may still
+# provide its own audio override, but this product never selects it:
 #
 #   m RPI5_AUDIO=usb -j8
-RPI5_AUDIO ?= a2b
+RPI5_AUDIO ?= usb
 ifeq ($(RPI5_AUDIO),a2b)
 RPI5_AUDIO_DEVICE := rpi
 RPI5_SIMULATE_INPUT := true
@@ -21,7 +19,7 @@ RPI5_AUDIO_DEVICE := usb
 RPI5_SIMULATE_INPUT := false
 RPI5_AUDIO_USB_CAPTURE_SOURCE ?= Mic
 else
-$(error Unsupported RPI5_AUDIO '$(RPI5_AUDIO)'; use a2b or usb)
+$(error Unsupported RPI5_AUDIO '$(RPI5_AUDIO)'; use usb)
 endif
 
 PRODUCT_VENDOR_PROPERTIES += \
@@ -178,8 +176,10 @@ ifeq ($(RPI5_STORAGE),nvme)
 RPI5_FSTAB := $(DEVICE_PATH)/ramdisk/fstab.rpi5.nvme
 else ifeq ($(RPI5_STORAGE),emmc)
 RPI5_FSTAB := $(DEVICE_PATH)/ramdisk/fstab.rpi5.emmc
+else ifeq ($(RPI5_STORAGE),sd)
+RPI5_FSTAB := $(DEVICE_PATH)/ramdisk/fstab.rpi5.sd
 else
-$(error Unsupported RPI5_STORAGE '$(RPI5_STORAGE)'; use nvme or emmc)
+$(error Unsupported RPI5_STORAGE '$(RPI5_STORAGE)'; use nvme, sd, or emmc)
 endif
 
 PRODUCT_COPY_FILES += \
@@ -235,5 +235,16 @@ PRODUCT_PACKAGES += \
     libwpa_client \
     wificond
 
+# Package the Raspberry Pi 5's onboard BCM43455 firmware and regulatory data.
+# The kernel falls back to the generic .bin when the board-specific filename is
+# absent, but the NVRAM and CLM data must also be available under /vendor/firmware.
+RPI5_WIFI_FIRMWARE_DIR := vendor/brcm/rpi5/proprietary/vendor/firmware
+
 PRODUCT_COPY_FILES += \
-    frameworks/native/data/etc/android.hardware.wifi.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.wifi.xml
+    frameworks/native/data/etc/android.hardware.wifi.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.wifi.xml \
+    $(RPI5_WIFI_FIRMWARE_DIR)/brcm/BCM4345C0.hcd:$(TARGET_COPY_OUT_VENDOR)/firmware/brcm/BCM4345C0.hcd \
+    $(RPI5_WIFI_FIRMWARE_DIR)/brcm/brcmfmac43455-sdio.bin:$(TARGET_COPY_OUT_VENDOR)/firmware/brcm/brcmfmac43455-sdio.bin \
+    $(RPI5_WIFI_FIRMWARE_DIR)/brcm/brcmfmac43455-sdio.clm_blob:$(TARGET_COPY_OUT_VENDOR)/firmware/brcm/brcmfmac43455-sdio.clm_blob \
+    $(RPI5_WIFI_FIRMWARE_DIR)/brcm/brcmfmac43455-sdio.txt:$(TARGET_COPY_OUT_VENDOR)/firmware/brcm/brcmfmac43455-sdio.txt \
+    $(RPI5_WIFI_FIRMWARE_DIR)/regulatory.db:$(TARGET_COPY_OUT_VENDOR)/firmware/regulatory.db \
+    $(RPI5_WIFI_FIRMWARE_DIR)/regulatory.db.p7s:$(TARGET_COPY_OUT_VENDOR)/firmware/regulatory.db.p7s

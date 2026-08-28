@@ -17,6 +17,8 @@ PRODUCT_RELEASE_CONFIG_MAPS += \
 # storage/display combinations without editing the device tree by hand.
 RPI5_STORAGE ?= nvme
 RPI5_DISPLAY ?= waveshare10_1
+# All public Caramel Vanilla images use USB audio.
+RPI5_AUDIO := usb
 # Raspberry Pi 5's PCIe Gen 3 mode is faster but not certified by Raspberry
 # Pi.  Keep the reference NVMe product fast while retaining a product/build
 # override for adapters or boards that are more stable at the default Gen 2:
@@ -27,6 +29,17 @@ RPI5_PCIE_GEN ?= 3
 # always-powered automotive unit.  Builders can restore the upstream kernel
 # defaults with RPI5_NVME_POWER_POLICY=default.
 RPI5_NVME_POWER_POLICY ?= performance
+CARAMEL_VANILLA_EXCLUDE_CAR_APP_HOST := true
+
+# Physical A/B OTA. Raspberry Pi firmware selects the active boot FAT
+# partition; the device boot-control service keeps that selection in sync
+# with Android's update_engine slot state.
+AB_OTA_UPDATER := true
+AB_OTA_PARTITIONS := boot system vendor
+TARGET_OTA_ALLOW_NON_AB := false
+PRODUCT_BUILD_GENERIC_OTA_PACKAGE := true
+PRODUCT_PACKAGES += update_engine update_engine_client update_verifier bootctl
+PRODUCT_PACKAGES += caramel-vanilla-bootctl-service rpi5-ab-tryboot
 
 # Inherit device configuration
 $(call inherit-product, $(DEVICE_PATH)/device.mk)
@@ -45,11 +58,6 @@ endif
 $(call inherit-product, vendor/radiosound/aurora-store/caramel_vanilla_aurora_store.mk)
 $(call inherit-product, vendor/radiosound/voiceassistant/caramel_voice.mk)
 $(call inherit-product, vendor/radiosound/caramelstore/caramel_store.mk)
-
-# Salted Caramel Vanilla A2B profile. The native controller runs after ALSA
-# opens the PCM clock; alternate one-node hardware can select the other profile
-# at build time without changing the controller implementation.
-$(call soong_config_set,rpi_audio,a2b_init_routine,mr_data_main_2node_tdm4)
 
 $(call enforce-product-packages-exist,Bluetooth CaramelStore CaramelVanillaAuroraStore Keyguard Launcher2 OverviewApp RotaryIME RotaryPlayground com.android.ranging display_compat_config libnfc_ndef libvariablespeed pppd vendor_tracing_descriptors)
 
@@ -148,6 +156,7 @@ PRODUCT_PACKAGES += \
     AndroidCarRpiOverlay \
     BluetoothRpiOverlay \
     CarServiceRpiOverlay \
+    CarSystemUIRpiOverlay \
     CaramelVoiceDefaults \
     SettingsProviderRpiOverlay \
     WifiRpiOverlay
@@ -164,7 +173,7 @@ endif
 # mode list. Apply the user-scoped 60 Hz settings at boot only for Waveshare
 # products; HDMI variants must retain their display's own mode policy.
 ifeq ($(RPI5_DISPLAY),waveshare10_1)
-RPI5_DISPLAY_REFRESH_RATE ?= 60.02573
+RPI5_DISPLAY_REFRESH_RATE ?= 60.03
 PRODUCT_VENDOR_PROPERTIES += \
     ro.vendor.rpi5.display.refresh_rate=$(RPI5_DISPLAY_REFRESH_RATE)
 

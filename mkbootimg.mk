@@ -8,8 +8,9 @@ DEVICE_PATH := device/brcm/rpi5
 KERNEL_PATH := device/brcm/rpi5-kernel
 
 RPI_BOOT_OUT := $(PRODUCT_OUT)/rpiboot
+RPI_BOOT_INPUTS := $(wildcard $(DEVICE_PATH)/boot/*)
 RPI5_DISPLAY ?= waveshare10_1
-$(RPI_BOOT_OUT): $(INSTALLED_RAMDISK_TARGET)
+$(RPI_BOOT_OUT): $(INSTALLED_RAMDISK_TARGET) $(RPI_BOOT_INPUTS)
 	mkdir -p $(RPI_BOOT_OUT)
 	mkdir -p $(RPI_BOOT_OUT)/overlays
 	cp $(DEVICE_PATH)/boot/* $(RPI_BOOT_OUT)
@@ -31,10 +32,28 @@ $(RPI_BOOT_OUT): $(INSTALLED_RAMDISK_TARGET)
 	cp $(KERNEL_PATH)/overlays/* $(RPI_BOOT_OUT)/overlays
 	cp $(PRODUCT_OUT)/ramdisk.img $(RPI_BOOT_OUT)
 	if [ "$(RPI5_STORAGE)" = "nvme" ] && [ "$(RPI5_NVME_POWER_POLICY)" = "performance" ]; then \
-		echo $(BOARD_KERNEL_CMDLINE) pcie_aspm.policy=performance nvme_core.default_ps_max_latency_us=0 > $(RPI_BOOT_OUT)/cmdline.txt; \
+		RPI5_OTA_CMDLINE="$(BOARD_KERNEL_CMDLINE) androidboot.boot_devices=axi/1000110000.pcie pcie_aspm.policy=performance nvme_core.default_ps_max_latency_us=0"; \
+	elif [ "$(RPI5_STORAGE)" = "nvme" ]; then \
+		RPI5_OTA_CMDLINE="$(BOARD_KERNEL_CMDLINE) androidboot.boot_devices=axi/1000110000.pcie"; \
 	else \
-		echo $(BOARD_KERNEL_CMDLINE) > $(RPI_BOOT_OUT)/cmdline.txt; \
-	fi
+		RPI5_OTA_CMDLINE="$(BOARD_KERNEL_CMDLINE)"; \
+	fi; \
+	printf '%s androidboot.slot_suffix=_a\n' "$$RPI5_OTA_CMDLINE" > $(RPI_BOOT_OUT)/cmdline_a.txt; \
+	printf '%s androidboot.slot_suffix=_b\n' "$$RPI5_OTA_CMDLINE" > $(RPI_BOOT_OUT)/cmdline_b.txt; \
+	rm -f $(RPI_BOOT_OUT)/cmdline.txt; \
+	{ \
+		echo '[all]'; \
+		echo 'cmdline=cmdline_a.txt'; \
+		echo '[boot_partition=2]'; \
+		echo 'cmdline=cmdline_b.txt'; \
+	} >> $(RPI_BOOT_OUT)/config.txt; \
+	{ \
+		echo '[all]'; \
+		echo 'tryboot_a_b=1'; \
+		echo 'boot_partition=1'; \
+		echo '[tryboot]'; \
+		echo 'boot_partition=2'; \
+	} > $(RPI_BOOT_OUT)/autoboot.txt
 
 $(INSTALLED_BOOTIMAGE_TARGET): $(RPI_BOOT_OUT)
 	$(call pretty,"Target boot image: $@")

@@ -24,8 +24,11 @@ TARGET_NO_BOOTLOADER := true
 TARGET_SCREEN_DENSITY := 150
 
 # Kernel
-BOARD_CUSTOM_BOOTIMG := true
+# Custom boot image is provided by BOARD_CUSTOM_BOOTIMG_MK; keep recovery absent.
 BOARD_CUSTOM_BOOTIMG_MK := $(DEVICE_PATH)/mkbootimg.mk
+# The custom builder still emits boot.img, but target-files must carry it in
+# IMAGES/ for A/B OTA generation. There is intentionally no recovery image.
+BOARD_COPY_BOOT_IMAGE_TO_TARGET_FILES := true
 BOARD_KERNEL_CMDLINE := console=ttyAMA10,115200 androidboot.hardware=rpi5 androidboot.verifiedbootstate=orange
 
 # Manifest

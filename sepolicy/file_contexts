@@ -7,6 +7,7 @@
 
 # USB GNSS HAL and NMEA receiver nodes
 /vendor/bin/hw/android\.hardware\.gnss-service\.rpi$    u:object_r:hal_gnss_rpi_exec:s0
+/vendor/bin/hw/caramel-vanilla-bootctl-service$             u:object_r:hal_bootctl_default_exec:s0
 /dev/ttyACM[0-9]+    u:object_r:gps_device:s0
 /dev/ttyUSB[0-9]+    u:object_r:gps_device:s0
 
@@ -23,12 +24,18 @@
 /dev/block/mmcblk0p6  u:object_r:system_block_device:s0
 /dev/block/mmcblk0p7  u:object_r:metadata_block_device:s0
 /dev/block/nvme0n1p1  u:object_r:boot_block_device:s0
-/dev/block/nvme0n1p3  u:object_r:userdata_block_device:s0
+/dev/block/nvme0n1p2  u:object_r:boot_block_device:s0
+/dev/block/nvme0n1p3  u:object_r:system_block_device:s0
+/dev/block/nvme0n1p4  u:object_r:system_block_device:s0
 /dev/block/nvme0n1p5  u:object_r:system_block_device:s0
 /dev/block/nvme0n1p6  u:object_r:system_block_device:s0
-/dev/block/nvme0n1p7  u:object_r:metadata_block_device:s0
+/dev/block/nvme0n1p7  u:object_r:misc_block_device:s0
+/dev/block/nvme0n1p8  u:object_r:metadata_block_device:s0
+/dev/block/nvme0n1p9  u:object_r:userdata_block_device:s0
 /dev/block/sda1       u:object_r:boot_block_device:s0
-/dev/block/sda3       u:object_r:userdata_block_device:s0
+/dev/block/sda3       u:object_r:system_block_device:s0
 /dev/block/sda5       u:object_r:system_block_device:s0
 /dev/block/sda6       u:object_r:system_block_device:s0
-/dev/block/sda7       u:object_r:metadata_block_device:s0
+/dev/block/sda7       u:object_r:misc_block_device:s0
+/dev/block/sda8       u:object_r:metadata_block_device:s0
+/dev/block/sda9       u:object_r:userdata_block_device:s0

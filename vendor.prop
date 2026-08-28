@@ -1,7 +1,6 @@
 # Audio
 # Audio routing is selected in device.mk with RPI5_AUDIO. The default is the
-# Salted Caramel A2B/I2S path; use RPI5_AUDIO=usb for USB microphone/speaker
-# development hardware.
+# USB microphone/speaker profile.
 persist.vendor.gps.device=/dev/ttyACM0
 ro.kernel.android.gps=ttyACM0
 ro.config.media_vol_default=20

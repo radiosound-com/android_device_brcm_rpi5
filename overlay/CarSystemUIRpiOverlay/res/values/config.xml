@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2026 Radio Sound, Inc.
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <!-- Launch the car-app host directly; the OsmAnd wrapper creates a transient
+         task that the dock's task-panel transition cannot attach to reliably. -->
+    <string-array name="config_defaultDockApps" translatable="false">
+        <item>com.android.car.settings/com.android.car.settings.Settings_Launcher_Homepage</item>
+        <item>com.android.car.radio/com.android.car.radio.service.RadioAppService</item>
+        <item>com.android.car.dialer/com.android.car.dialer.ui.TelecomActivity</item>
+        <item>net.osmand.dev/androidx.car.app.activity.CarAppActivity</item>
+    </string-array>
+</resources>
