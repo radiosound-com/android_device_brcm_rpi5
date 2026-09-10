@@ -122,8 +122,8 @@ device to block indefinitely.
 
 The Android image supplies the NVMe fstab and, for `RPI5_STORAGE=nvme`, adds
 `dtparam=pciex1` to the firmware configuration so Linux enables the PCIe link.
-The reference product defaults to PCIe Gen 3 through `RPI5_PCIE_GEN=3`, which
-adds `dtparam=pciex1_gen=3`. It also defaults
+The reference product defaults to the supported PCIe Gen 2 through
+`RPI5_PCIE_GEN=2`. It also defaults
 `RPI5_NVME_POWER_POLICY=performance`, which adds these kernel arguments:
 
 ```text
@@ -137,9 +137,8 @@ avoids controller resets observed with a Samsung SSD 960 EVO under sustained
 model and filesystem reads. Restore the upstream kernel power-saving defaults
 for power-sensitive hardware with `RPI5_NVME_POWER_POLICY=default`.
 
-Select the supported Gen 2 fallback at build time with `RPI5_PCIE_GEN=2`; that
-leaves the link at the Raspberry Pi default while retaining the performance
-power policy:
+Keep the supported Gen 2 default at build time with `RPI5_PCIE_GEN=2`; this
+retains the performance power policy:
 
 ```sh
 RPI5_PCIE_GEN=2 m bootimage
@@ -151,12 +150,17 @@ Both build-time knobs can be combined when diagnosing an adapter:
 RPI5_PCIE_GEN=2 RPI5_NVME_POWER_POLICY=default m bootimage
 ```
 
-Raspberry Pi's [official PCIe documentation](https://www.raspberrypi.com/documentation/computers/configuration.html)
-documents Gen 3 as uncertified on Pi 5 and warns that it may be unstable. If
-the NVMe fails to enumerate, Android reboots, or storage errors appear under
-load, rebuild with `RPI5_PCIE_GEN=2`. The generated Gen 3 boot
-configuration contains both lines, and `rpiboot/cmdline.txt` contains the
-selected power-policy arguments:
+Raspberry Pi's [official PCIe documentation](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#pcie-gen-3-0)
+documents Gen 3 as uncertified on Pi 5 and warns that it may be unstable.
+Android WiFi testing on the reference NVMe unit reproduced association timeout
+at Gen 3 and successful native WPA2/DHCP at Gen 2 with the same kernel,
+firmware 7.45.265 and verified network credential. The physical mechanism is
+not established; do not assume every Pi/adapter is affected.
+
+Gen 3 is available only as an explicit `RPI5_PCIE_GEN=3` opt-in after validating
+both storage and WiFi on the actual hardware. Its generated boot configuration
+contains the lines below; `rpiboot/cmdline_a.txt` and `cmdline_b.txt` contain
+the selected power-policy arguments:
 
 ```ini
 dtparam=pciex1

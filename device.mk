@@ -238,6 +238,8 @@ PRODUCT_PACKAGES += \
 # Package the Raspberry Pi 5's onboard BCM43455 firmware and regulatory data.
 # The kernel falls back to the generic .bin when the board-specific filename is
 # absent, but the NVRAM and CLM data must also be available under /vendor/firmware.
+# Use one canonical firmware set for generic and Pi 5 aliases, including the
+# early boot ramdisk, so a cold boot cannot select an older experimental copy.
 RPI5_WIFI_FIRMWARE_DIR := vendor/brcm/rpi5/proprietary/vendor/firmware
 
 PRODUCT_COPY_FILES += \
@@ -246,5 +248,17 @@ PRODUCT_COPY_FILES += \
     $(RPI5_WIFI_FIRMWARE_DIR)/brcm/brcmfmac43455-sdio.bin:$(TARGET_COPY_OUT_VENDOR)/firmware/brcm/brcmfmac43455-sdio.bin \
     $(RPI5_WIFI_FIRMWARE_DIR)/brcm/brcmfmac43455-sdio.clm_blob:$(TARGET_COPY_OUT_VENDOR)/firmware/brcm/brcmfmac43455-sdio.clm_blob \
     $(RPI5_WIFI_FIRMWARE_DIR)/brcm/brcmfmac43455-sdio.txt:$(TARGET_COPY_OUT_VENDOR)/firmware/brcm/brcmfmac43455-sdio.txt \
+    $(RPI5_WIFI_FIRMWARE_DIR)/brcm/brcmfmac43455-sdio.bin:$(TARGET_COPY_OUT_VENDOR)/firmware/brcm/brcmfmac43455-sdio.raspberrypi,5-model-b.bin \
+    $(RPI5_WIFI_FIRMWARE_DIR)/brcm/brcmfmac43455-sdio.clm_blob:$(TARGET_COPY_OUT_VENDOR)/firmware/brcm/brcmfmac43455-sdio.raspberrypi,5-model-b.clm_blob \
+    $(RPI5_WIFI_FIRMWARE_DIR)/brcm/brcmfmac43455-sdio.txt:$(TARGET_COPY_OUT_VENDOR)/firmware/brcm/brcmfmac43455-sdio.raspberrypi,5-model-b.txt \
+    $(RPI5_WIFI_FIRMWARE_DIR)/brcm/brcmfmac43455-sdio.bin:$(TARGET_COPY_OUT_RAMDISK)/etc/firmware/brcm/brcmfmac43455-sdio.bin \
+    $(RPI5_WIFI_FIRMWARE_DIR)/brcm/brcmfmac43455-sdio.clm_blob:$(TARGET_COPY_OUT_RAMDISK)/etc/firmware/brcm/brcmfmac43455-sdio.clm_blob \
+    $(RPI5_WIFI_FIRMWARE_DIR)/brcm/brcmfmac43455-sdio.txt:$(TARGET_COPY_OUT_RAMDISK)/etc/firmware/brcm/brcmfmac43455-sdio.txt \
+    $(RPI5_WIFI_FIRMWARE_DIR)/brcm/brcmfmac43455-sdio.bin:$(TARGET_COPY_OUT_RAMDISK)/etc/firmware/brcm/brcmfmac43455-sdio.raspberrypi,5-model-b.bin \
+    $(RPI5_WIFI_FIRMWARE_DIR)/brcm/brcmfmac43455-sdio.clm_blob:$(TARGET_COPY_OUT_RAMDISK)/etc/firmware/brcm/brcmfmac43455-sdio.raspberrypi,5-model-b.clm_blob \
+    $(RPI5_WIFI_FIRMWARE_DIR)/brcm/brcmfmac43455-sdio.txt:$(TARGET_COPY_OUT_RAMDISK)/etc/firmware/brcm/brcmfmac43455-sdio.raspberrypi,5-model-b.txt \
+    $(RPI5_WIFI_FIRMWARE_DIR)/brcm/brcmfmac43455-sdio.bin:$(TARGET_COPY_OUT_RAMDISK)/lib/firmware/brcm/brcmfmac43455-sdio.raspberrypi,5-model-b.bin \
+    $(RPI5_WIFI_FIRMWARE_DIR)/brcm/brcmfmac43455-sdio.clm_blob:$(TARGET_COPY_OUT_RAMDISK)/lib/firmware/brcm/brcmfmac43455-sdio.raspberrypi,5-model-b.clm_blob \
+    $(RPI5_WIFI_FIRMWARE_DIR)/brcm/brcmfmac43455-sdio.txt:$(TARGET_COPY_OUT_RAMDISK)/lib/firmware/brcm/brcmfmac43455-sdio.raspberrypi,5-model-b.txt \
     $(RPI5_WIFI_FIRMWARE_DIR)/regulatory.db:$(TARGET_COPY_OUT_VENDOR)/firmware/regulatory.db \
     $(RPI5_WIFI_FIRMWARE_DIR)/regulatory.db.p7s:$(TARGET_COPY_OUT_VENDOR)/firmware/regulatory.db.p7s

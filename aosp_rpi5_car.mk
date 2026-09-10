@@ -19,11 +19,12 @@ RPI5_STORAGE ?= nvme
 RPI5_DISPLAY ?= waveshare10_1
 # All public Caramel Vanilla images use USB audio.
 RPI5_AUDIO := usb
-# Raspberry Pi 5's PCIe Gen 3 mode is faster but not certified by Raspberry
-# Pi.  Keep the reference NVMe product fast while retaining a product/build
-# override for adapters or boards that are more stable at the default Gen 2:
-#   RPI5_PCIE_GEN=2 m bootimage
-RPI5_PCIE_GEN ?= 3
+# Use Raspberry Pi 5's supported PCIe Gen 2 speed. On the reference NVMe unit,
+# Gen 3 reproducibly prevents onboard WiFi association; Gen 2 connects using
+# the same Android kernel, firmware and network credentials. Gen 3 remains
+# an explicit, uncertified hardware-specific opt-in:
+#   RPI5_PCIE_GEN=3 m bootimage
+RPI5_PCIE_GEN ?= 2
 # Keep the reference NVMe link out of PCIe ASPM and the controller out of
 # autonomous low-power states.  This favors throughput and reliability on the
 # always-powered automotive unit.  Builders can restore the upstream kernel
