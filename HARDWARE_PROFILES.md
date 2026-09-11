@@ -164,7 +164,7 @@ the selected power-policy arguments:
 
 ```ini
 dtparam=pciex1
-dtparam=pciex1_gen=3
+dtparam=pciex1_gen=2
 ```
 
 The Raspberry Pi 5 bootloader configuration is separate from the image. For a
@@ -214,7 +214,7 @@ is unchanged.
 Waveshare products also include the platform-signed
 `CaramelWaveshareDisplayDefaults` receiver. It runs for the active Android
 user at locked boot, normal boot, and user unlock, and persists
-`peak_refresh_rate=60.0` and `min_refresh_rate=60.0` in SettingsProvider. This
+`peak_refresh_rate=60.03` and `min_refresh_rate=60.03` in SettingsProvider. This
 is intentionally user-scoped rather than a boot-image edit, so the values
 survive reboot and apply to the current car user (including user 10). HDMI
 products do not include the receiver.

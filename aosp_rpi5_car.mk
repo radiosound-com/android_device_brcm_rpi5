@@ -32,6 +32,16 @@ RPI5_PCIE_GEN ?= 2
 RPI5_NVME_POWER_POLICY ?= performance
 CARAMEL_VANILLA_EXCLUDE_CAR_APP_HOST := true
 
+# The manifest omits SDV services; their standalone platform tests and display
+# safety service must not enter this non-SDV product's Soong dependency graph.
+# This excludes only unrelated sources, not unresolved dependencies generally.
+PRODUCT_SOURCE_ROOT_DIRS += \
+    -platform_testing/libraries/sdv \
+    -platform_testing/tests/sdv \
+    -platform_testing/libraries/automotive/display_safety \
+    -platform_testing/tests/automotive/display_safety \
+    -packages/services/display_safety
+
 # Physical A/B OTA. Raspberry Pi firmware selects the active boot FAT
 # partition; the device boot-control service keeps that selection in sync
 # with Android's update_engine slot state.
