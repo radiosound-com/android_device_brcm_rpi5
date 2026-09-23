@@ -1,0 +1,55 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 Radio Sound, Inc.
+// Pi 5 playback-only adaptation of ADI's simple-audio-card A2B example:
+// https://wiki.analog.com/resources/tools-software/a2bv2/a2braspberrypi/dtsoverlay
+// Exposes PCM device 0. A2B discovery and amplifier control are userspace work.
+// Compiled/structurally checked only; requires hardware bring-up.
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "brcm,bcm2712";
+
+    fragment@0 {
+        target = <&i2s_clk_producer>;
+        __overlay__ {
+            #sound-dai-cells = <0>;
+            status = "okay";
+        };
+    };
+
+    fragment@1 {
+        target-path = "/";
+        __overlay__ {
+            ad242x_sink: ad242x-audio-sink {
+                compatible = "linux,spdif-dit";
+                #sound-dai-cells = <0>;
+                status = "okay";
+            };
+        };
+    };
+
+    fragment@2 {
+        target = <&sound>;
+        __overlay__ {
+            compatible = "simple-audio-card";
+            simple-audio-card,name = "ad242x";
+            simple-audio-card,format = "i2s";
+            simple-audio-card,bitclock-master = <&ad242x_cpu>;
+            simple-audio-card,frame-master = <&ad242x_cpu>;
+            status = "okay";
+
+            ad242x_cpu: simple-audio-card,cpu {
+                sound-dai = <&i2s_clk_producer>;
+                dai-tdm-slot-num = <2>;
+                dai-tdm-slot-width = <32>;
+                dai-tdm-slot-tx-mask = <1 1>;
+                dai-tdm-slot-rx-mask = <1 1>;
+            };
+
+            simple-audio-card,codec {
+                sound-dai = <&ad242x_sink>;
+            };
+        };
+    };
+};

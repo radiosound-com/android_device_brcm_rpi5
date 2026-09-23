@@ -31,6 +31,7 @@ namespace aidl::android::hardware::audio::core {
 class StreamPrimary : public StreamAlsaMonoPipe {
   public:
     StreamPrimary(StreamContext* context, const Metadata& metadata);
+    ~StreamPrimary();
 
     // Methods of 'DriverInterface'.
     ::android::status_t init(DriverCallbackInterface* callback) override;
@@ -50,6 +51,8 @@ class StreamPrimary : public StreamAlsaMonoPipe {
   protected:
     std::vector<alsa::DeviceProfile> getDeviceProfiles() override;
     bool isStubStream();
+    bool silenceOutput() const override;
+    void outputClockFailed() override;
 
     const bool mIsAsynchronous;
     int64_t mStartTimeNs = 0;
@@ -82,6 +85,8 @@ class StreamPrimary : public StreamAlsaMonoPipe {
 
     // Used by the worker thread only.
     AlsaDeviceId mCurrAlsaDeviceId = kStubDeviceId;
+    bool mA2bAcquired = false;
+    void releaseA2b();
 };
 
 class StreamInPrimary final : public StreamIn, public StreamPrimary, public StreamInHwGainHelper {

@@ -43,6 +43,13 @@ class StreamAlsaMonoPipe : public StreamAlsaBase {
                                  int32_t* latencyMs) override;
     void shutdown() override;
 
+  protected:
+    // Set only while I/O is stopped. A2B needs clocks even with an empty pipe.
+    bool mKeepOutputClock = false;
+    bool waitForOutputClock();
+    virtual bool silenceOutput() const { return false; }
+    virtual void outputClockFailed() {}
+
   private:
     ::android::NBAIO_Format getPipeFormat() const;
     ::android::sp<::android::MonoPipe> makeSink(bool writeCanBlock);
@@ -57,6 +64,8 @@ class StreamAlsaMonoPipe : public StreamAlsaBase {
     std::vector<::android::sp<::android::MonoPipeReader>> mSources;
     std::vector<std::thread> mIoThreads;
     std::atomic<bool> mIoThreadIsRunning = false;  // used by all threads
+    std::atomic<uint64_t> mClockFrames = 0;
+    std::atomic<bool> mClockError = false;
 };
 
 }  // namespace aidl::android::hardware::audio::core

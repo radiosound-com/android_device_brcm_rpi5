@@ -15,7 +15,10 @@
 /dev/dri(/.*)?  u:object_r:gpu_device:s0
 
 # A2B
+/vendor/bin/a2bctl  u:object_r:vendor_a2bctl_exec:s0
 /dev/i2c-[0-9]+  u:object_r:i2c_device:s0
+/dev/socket/a2b_control  u:object_r:vendor_a2b_socket:s0
+/data/vendor/a2b(/.*)?  u:object_r:vendor_a2b_data_file:s0
 
 # Partitions
 /dev/block/mmcblk0p1  u:object_r:boot_block_device:s0

@@ -1,2 +1,4 @@
 type mediadrm_vendor_data_file, file_type, data_file_type;
 type sysfs_hdmi, fs_type, sysfs_type;
+type vendor_a2b_data_file, file_type, data_file_type;
+type vendor_a2b_socket, file_type;

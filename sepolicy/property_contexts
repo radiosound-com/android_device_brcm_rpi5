@@ -1,5 +1,8 @@
 # Audio
 persist.vendor.audio.device           u:object_r:vendor_audio_config_prop:s0
+persist.vendor.audio.a2b.profile      u:object_r:vendor_a2b_prop:s0 exact string
+vendor.audio.a2b.restart              u:object_r:vendor_a2b_prop:s0 exact bool
+ro.vendor.audio.input                u:object_r:vendor_audio_config_prop:s0 exact string
 persist.vendor.audio.pcm.card         u:object_r:vendor_audio_config_prop:s0
 persist.vendor.audio.refine_position  u:object_r:vendor_audio_config_prop:s0
 

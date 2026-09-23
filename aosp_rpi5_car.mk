@@ -17,8 +17,8 @@ PRODUCT_RELEASE_CONFIG_MAPS += \
 # storage/display combinations without editing the device tree by hand.
 RPI5_STORAGE ?= nvme
 RPI5_DISPLAY ?= waveshare10_1
-# All public Caramel Vanilla images use USB audio.
-RPI5_AUDIO := usb
+# Default to USB; RPI5_AUDIO=a2b enables the A2B output and boot overlay.
+RPI5_AUDIO ?= usb
 # Use Raspberry Pi 5's supported PCIe Gen 2 speed. On the reference NVMe unit,
 # Gen 3 reproducibly prevents onboard WiFi association; Gen 2 connects using
 # the same Android kernel, firmware and network credentials. Gen 3 remains

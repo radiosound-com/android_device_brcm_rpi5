@@ -10,7 +10,19 @@ KERNEL_PATH := device/brcm/rpi5-kernel
 RPI_BOOT_OUT := $(PRODUCT_OUT)/rpiboot
 RPI_BOOT_INPUTS := $(wildcard $(DEVICE_PATH)/boot/*)
 RPI5_DISPLAY ?= waveshare10_1
-$(RPI_BOOT_OUT): $(INSTALLED_RAMDISK_TARGET) $(RPI_BOOT_INPUTS)
+RPI5_A2B_DTBO := $(PRODUCT_OUT)/obj/A2B/rpi-ad242x.dtbo
+$(RPI5_A2B_DTBO): $(DEVICE_PATH)/audio/a2b/rpi-ad242x-overlay.dts $(HOST_OUT_EXECUTABLES)/dtc
+	mkdir -p $(dir $@)
+	$(HOST_OUT_EXECUTABLES)/dtc -@ -I dts -O dtb -o $@ $<
+
+# Remove the previous option stamp so switching back also rebuilds config.txt.
+RPI_BOOT_CONFIG_STAMP := $(PRODUCT_OUT)/obj/RPI_BOOT_CONFIG/$(RPI5_AUDIO)-$(RPI5_DISPLAY)-$(RPI5_STORAGE)-$(RPI5_PCIE_GEN)-$(RPI5_NVME_POWER_POLICY).stamp
+$(RPI_BOOT_CONFIG_STAMP):
+	mkdir -p $(dir $@)
+	rm -f $(dir $@)*.stamp
+	touch $@
+
+$(RPI_BOOT_OUT): $(INSTALLED_RAMDISK_TARGET) $(RPI_BOOT_INPUTS) $(RPI5_A2B_DTBO) $(RPI_BOOT_CONFIG_STAMP)
 	mkdir -p $(RPI_BOOT_OUT)
 	mkdir -p $(RPI_BOOT_OUT)/overlays
 	cp $(DEVICE_PATH)/boot/* $(RPI_BOOT_OUT)
@@ -30,6 +42,10 @@ $(RPI_BOOT_OUT): $(INSTALLED_RAMDISK_TARGET) $(RPI_BOOT_INPUTS)
 	cp $(KERNEL_PATH)/Image $(RPI_BOOT_OUT)
 	cp $(KERNEL_PATH)/bcm2712*-rpi-*.dtb $(RPI_BOOT_OUT)
 	cp $(KERNEL_PATH)/overlays/* $(RPI_BOOT_OUT)/overlays
+	cp $(RPI5_A2B_DTBO) $(RPI_BOOT_OUT)/overlays/rpi-ad242x.dtbo
+	if [ "$(RPI5_AUDIO)" = "a2b" ]; then \
+		printf '\n[all]\ndtoverlay=rpi-ad242x\n' >> $(RPI_BOOT_OUT)/config.txt; \
+	fi
 	cp $(PRODUCT_OUT)/ramdisk.img $(RPI_BOOT_OUT)
 	if [ "$(RPI5_STORAGE)" = "nvme" ] && [ "$(RPI5_NVME_POWER_POLICY)" = "performance" ]; then \
 		RPI5_OTA_CMDLINE="$(BOARD_KERNEL_CMDLINE) androidboot.boot_devices=axi/1000110000.pcie pcie_aspm.policy=performance nvme_core.default_ps_max_latency_us=0"; \
@@ -54,6 +70,7 @@ $(RPI_BOOT_OUT): $(INSTALLED_RAMDISK_TARGET) $(RPI_BOOT_INPUTS)
 		echo '[tryboot]'; \
 		echo 'boot_partition=2'; \
 	} > $(RPI_BOOT_OUT)/autoboot.txt
+	touch $(RPI_BOOT_OUT)
 
 $(INSTALLED_BOOTIMAGE_TARGET): $(RPI_BOOT_OUT)
 	$(call pretty,"Target boot image: $@")

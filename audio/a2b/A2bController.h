@@ -1,32 +1,48 @@
-/*
- * Copyright 2026 Radio Sound, Inc.
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
+// Copyright 2026 Radio Sound, Inc. SPDX-License-Identifier: Apache-2.0
 #pragma once
-
-#include <mutex>
-
 #include <utils/Errors.h>
 
+#include <atomic>
+#include <memory>
+#include <mutex>
+#include <optional>
+#include <string>
+
+#include "Profile.h"
+
 namespace aidl::android::hardware::audio::core::a2b {
-
-// Process-wide A2B lifecycle. The interface is deliberately small; transport
-// and command execution remain implementation details of the HAL module.
 class A2bController final {
-  public:
+   public:
     static A2bController& getInstance();
+    void startControlServer();
+    // Acquire after PCM silence has established clocks; release before stopping
+    // PCM. Capture streams must never acquire this controller.
+    ::android::status_t acquire();
+    void release();
+    bool allowAudio() const { return mAllowAudio.load() && !mClockFailed.load(); }
+    void clockFailed() {
+        mClockFailed = true;
+        mAllowAudio = false;
+    }
 
-    // Must be called after ALSA has opened the PCM path so the A2B clock is live.
-    // A failed attempt is retryable on the next stream start.
-    ::android::status_t initialize();
-
-  private:
+   private:
     A2bController() = default;
-
+    bool load(const std::string& id, Profile* profile);
+    bool initialize();
+    bool stop();
+    bool run(const std::string& phase);
+    std::string command(const std::string& request);
+    void checkHealth();
     std::mutex mLock;
-    bool mInitialized = false;
+    std::once_flag mServerOnce;
+    std::unique_ptr<Transport> mTransport;
+    Profile mProfile;
+    std::string mError;
+    unsigned mUsers = 0;
+    bool mReady = false;
+    bool mQuiesced = false;
+    std::optional<bool> mMuted;
+    std::atomic<bool> mAllowAudio = false;
+    std::atomic<bool> mClockFailed = false;
 };
-
 }  // namespace aidl::android::hardware::audio::core::a2b

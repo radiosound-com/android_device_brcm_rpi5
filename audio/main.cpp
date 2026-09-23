@@ -30,6 +30,7 @@
 #include "core-impl/ChildInterface.h"
 #include "core-impl/Config.h"
 #include "core-impl/Module.h"
+#include "a2b/A2bController.h"
 
 using aidl::android::hardware::audio::core::ChildInterface;
 using aidl::android::hardware::audio::core::Config;
@@ -75,6 +76,7 @@ int main() {
 
     // Guaranteed log for b/210919187 and logd_integration_test
     LOG(INFO) << "Init for Audio AIDL HAL";
+    aidl::android::hardware::audio::core::a2b::A2bController::getInstance().startControlServer();
 
     AudioPolicyConfigXmlConverter audioPolicyConverter{
             ::android::audio_get_audio_policy_config_file()};

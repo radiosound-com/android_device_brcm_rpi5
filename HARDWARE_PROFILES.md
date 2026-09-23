@@ -18,15 +18,17 @@ The supported lunch targets are:
 | `aosp_rpi5_car_hdmi` | NVMe | HDMI |
 | `aosp_rpi5_car_emmc_hdmi` | SD/eMMC partition layout | HDMI |
 
-Each product has the same Caramel Vanilla voice stack and defaults to the A2B
-audio profile. For a USB microphone/speaker development unit, select the USB
-audio profile at build time without changing the storage/display product:
+Each product has the same Caramel Vanilla voice stack and defaults to USB
+audio. Select A2B independently of the storage/display product:
 
 ```sh
-m RPI5_AUDIO=usb -j8
+m RPI5_AUDIO=a2b RPI5_AUDIO_INPUT=usb RPI5_A2B_PROFILE=tas5720a_1node -j8
 ```
 
-`RPI5_AUDIO=a2b` is the default and preserves the reference behavior;
+See [A2B build, runtime profiles and wiring](audio/a2b/README.md) for the compiled
+overlay, editable node/register profiles and `a2bctl` reload/mute/shutdown commands.
+The initial TAS profile starts muted and still requires board bring-up.
+`RPI5_AUDIO=usb` is the default;
 `RPI5_AUDIO=usb` routes primary output to the first USB ALSA card that exposes
 playback, rather than assuming USB card 0, and disables the input simulation
 flag. This matters when a capture-only USB microphone enumerates before a
@@ -222,9 +224,9 @@ products do not include the receiver.
 ## USB audio acceptance check
 
 The USB profile must be installed as an image and booted with the sound card
-attached. `ro.boot.audio.tinyalsa.simulate_input` is read-only and latched by
-the audio HAL at boot; changing only `persist.vendor.audio.device` at runtime
-does not enable real microphone capture.
+attached. `RPI5_AUDIO_INPUT=usb` is now independent of output and is the default
+for both output choices. `none` simulates primary capture; changing only
+`persist.vendor.audio.device` cannot change that boot-time input choice.
 
 After booting the USB-profile image, verify the profile and hardware before
 testing the assistant:

@@ -1,0 +1,29 @@
+# A vendor-domain client keeps the maintenance socket within the Treble boundary.
+type vendor_a2bctl, domain;
+type vendor_a2bctl_exec, exec_type, vendor_file_type, file_type;
+
+userdebug_or_eng(`
+    # The AOSP adb-root domain (su) is permissive. Transition it into the enforcing
+    # client domain without granting forbidden core-to-vendor execute access.
+    type_transition su vendor_a2bctl_exec:process vendor_a2bctl;
+    domain_auto_trans(shell, vendor_a2bctl_exec, vendor_a2bctl)
+    allow vendor_a2bctl self:capability chown;
+    allow vendor_a2bctl self:unix_stream_socket create_stream_socket_perms;
+    unix_socket_connect(vendor_a2bctl, vendor_a2b, hal_audio_default)
+    allow vendor_a2bctl vendor_a2b_data_file:dir create_dir_perms;
+    allow vendor_a2bctl vendor_a2b_data_file:file create_file_perms;
+    # Read a descriptor opened by the shell, never open/traverse /data/local/tmp.
+    allow vendor_a2bctl shell_data_file:file { getattr read };
+    allow vendor_a2bctl proc_asound:dir r_dir_perms;
+    allow vendor_a2bctl proc_asound:file r_file_perms;
+    allow vendor_a2bctl proc_asound:lnk_file read;
+    allow vendor_a2bctl su:fd use;
+    allow vendor_a2bctl shell:fd use;
+    allow vendor_a2bctl adbd:fd use;
+    allow vendor_a2bctl devpts:chr_file rw_file_perms;
+    allow vendor_a2bctl su:fifo_file rw_file_perms;
+    allow vendor_a2bctl shell:fifo_file rw_file_perms;
+    allow vendor_a2bctl adbd:fifo_file rw_file_perms;
+    set_prop(vendor_a2bctl, vendor_a2b_prop)
+    set_prop(vendor_a2bctl, vendor_audio_config_prop)
+')

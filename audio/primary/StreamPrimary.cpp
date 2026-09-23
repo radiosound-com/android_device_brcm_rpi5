@@ -24,6 +24,7 @@
 #include <android-base/file.h>
 #include <android-base/parseint.h>
 #include <android-base/properties.h>
+#include <android-base/strings.h>
 #include <audio_utils/clock.h>
 #include <error/Result.h>
 #include <error/expected_utils.h>
@@ -57,6 +58,26 @@ StreamPrimary::StreamPrimary(StreamContext* context, const Metadata& metadata)
     return StreamAlsaMonoPipe::init(callback);
 }
 
+StreamPrimary::~StreamPrimary() {
+    // Stop the worker while derived virtual methods and controller state exist.
+    cleanupWorker();
+}
+
+bool StreamPrimary::silenceOutput() const {
+    return !a2b::A2bController::getInstance().allowAudio();
+}
+
+void StreamPrimary::outputClockFailed() {
+    a2b::A2bController::getInstance().clockFailed();
+}
+
+void StreamPrimary::releaseA2b() {
+    if (mA2bAcquired) {
+        a2b::A2bController::getInstance().release();
+        mA2bAcquired = false;
+    }
+}
+
 ::android::status_t StreamPrimary::drain(StreamDescriptor::DrainMode mode) {
     return isStubStreamOnWorker() ? mStubDriver.drain(mode) : StreamAlsaMonoPipe::drain(mode);
 }
@@ -73,12 +94,13 @@ StreamPrimary::StreamPrimary(StreamContext* context, const Metadata& metadata)
 }
 
 ::android::status_t StreamPrimary::standby() {
+    releaseA2b();
     return isStubStreamOnWorker() ? mStubDriver.standby() : StreamAlsaMonoPipe::standby();
 }
 
 ::android::status_t StreamPrimary::start() {
-    constexpr int kUsbStartAttempts = 3;
-    for (int attempt = 0; attempt < kUsbStartAttempts; ++attempt) {
+    constexpr int kHardwareStartAttempts = 3;
+    for (int attempt = 0; attempt < kHardwareStartAttempts; ++attempt) {
         bool isStub = true, canRetryHardwareCard = false, shutdownAlsaStream = false;
         {
             std::lock_guard l(mLock);
@@ -95,7 +117,7 @@ StreamPrimary::StreamPrimary(StreamContext* context, const Metadata& metadata)
                 std::lock_guard l(mLock);
                 mAlsaDeviceId = selected;
                 isStub = false;
-                LOG(INFO) << "Recovered USB " << (mIsInput ? "input" : "output")
+                LOG(INFO) << "Recovered PCM " << (mIsInput ? "input" : "output")
                           << " PCM card " << selected.first;
             }
         }
@@ -107,15 +129,24 @@ StreamPrimary::StreamPrimary(StreamContext* context, const Metadata& metadata)
             mCurrAlsaDeviceId = mAlsaDeviceId;
         }
         if (shutdownAlsaStream) {
+            releaseA2b();
             StreamAlsaMonoPipe::shutdown();  // Close currently opened ALSA devices.
         }
         if (isStub) {
-            if (canRetryHardwareCard && attempt + 1 < kUsbStartAttempts) continue;
+            if (canRetryHardwareCard && attempt + 1 < kHardwareStartAttempts) {
+                usleep(50000);
+                continue;
+            }
             return mStubDriver.start();
         }
 
+        if (mAlsaDeviceProxies.empty()) {
+            mKeepOutputClock = !mIsInput && GetProperty("persist.vendor.audio.device", "") == "rpi";
+        }
+        if (mKeepOutputClock && (mSampleRate != 48000 || !mConfig || mConfig->channels != 2))
+            return ::android::BAD_VALUE;
         const ::android::status_t status = StreamAlsaMonoPipe::start();
-        if (status == ::android::OK || !canRetryHardwareCard || attempt + 1 == kUsbStartAttempts) {
+        if (status == ::android::OK || !canRetryHardwareCard || attempt + 1 == kHardwareStartAttempts) {
             RETURN_STATUS_IF_ERROR(status);
             break;
         }
@@ -123,20 +154,22 @@ StreamPrimary::StreamPrimary(StreamContext* context, const Metadata& metadata)
         // A card can disappear between enumeration and pcm_open (especially
         // during USB reconnect). Force a fresh direction-aware probe instead
         // of leaving the stream bound to a stale card number.
-        LOG(WARNING) << "USB " << (mIsInput ? "input" : "output")
+        LOG(WARNING) << "PCM " << (mIsInput ? "input" : "output")
                      << " PCM start failed; retrying card selection";
         StreamAlsaMonoPipe::shutdown();
         std::lock_guard l(mLock);
         mAlsaDeviceId = kStubDeviceId;
         mCurrAlsaDeviceId = kStubDeviceId;
     }
-    if (GetProperty("persist.vendor.audio.device", "hdmi0") == "rpi") {
-        const ::android::status_t a2bStatus = a2b::A2bController::getInstance().initialize();
+    if (mKeepOutputClock && !mA2bAcquired) {
+        const ::android::status_t a2bStatus = waitForOutputClock()
+                ? a2b::A2bController::getInstance().acquire() : ::android::NO_INIT;
         if (a2bStatus != ::android::OK) {
             LOG(ERROR) << "A2B initialization failed; stopping the ALSA stream";
             StreamAlsaMonoPipe::shutdown();
             return a2bStatus;
         }
+        mA2bAcquired = true;
     }
     mStartTimeNs = ::android::uptimeNanos();
     mFramesSinceStart = 0;
@@ -195,6 +228,7 @@ StreamPrimary::StreamPrimary(StreamContext* context, const Metadata& metadata)
 }
 
 void StreamPrimary::shutdown() {
+    releaseA2b();
     StreamAlsaMonoPipe::shutdown();
     mStubDriver.shutdown();
 }
@@ -207,8 +241,8 @@ ndk::ScopedAStatus StreamPrimary::setConnectedDevices(const ConnectedDevices& de
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
     const bool useStubDriver = devices.empty() || useStubStream(mIsInput, devices[0]);
-    const bool canRetryHardwareCard = !useStubDriver &&
-            GetProperty("persist.vendor.audio.device", "") == "usb";
+    const std::string output = GetProperty("persist.vendor.audio.device", "");
+    const bool canRetryHardwareCard = !useStubDriver && (mIsInput || output == "usb" || output == "rpi");
     const AlsaDeviceId selectedCard = useStubDriver ? kStubDeviceId : getCardId(mIsInput);
     {
         std::lock_guard l(mLock);
@@ -243,7 +277,8 @@ StreamPrimary::AlsaDeviceId StreamPrimary::getCardId(bool isInput) {
 
     const std::string forceCard = GetProperty("persist.vendor.audio.pcm.card", "-1");
     int cardId = -1;
-    if (forceCard != "-1" && ::android::base::ParseInt(forceCard, &cardId) && cardId >= 0) {
+    if (!isInput && GetProperty("persist.vendor.audio.device", "") != "rpi" &&
+        forceCard != "-1" && ::android::base::ParseInt(forceCard, &cardId) && cardId >= 0) {
         LOG(INFO) << "Forcing PCM card " << cardId;
         cardAndDeviceId.first = cardId;
         return cardAndDeviceId;
@@ -252,7 +287,8 @@ StreamPrimary::AlsaDeviceId StreamPrimary::getCardId(bool isInput) {
         LOG(WARNING) << "Ignoring invalid persist.vendor.audio.pcm.card='" << forceCard << "'";
     }
 
-    const std::string deviceName = GetProperty("persist.vendor.audio.device", "hdmi0");
+    const std::string deviceName = isInput ? GetProperty("ro.vendor.audio.input", "usb")
+                                         : GetProperty("persist.vendor.audio.device", "hdmi0");
     if (deviceName == "usb") {
         const int usbCard = findUsbCard(isInput);
         if (usbCard >= 0) {
@@ -271,7 +307,9 @@ StreamPrimary::AlsaDeviceId StreamPrimary::getCardId(bool isInput) {
         cardPath = "/proc/asound/card" + std::to_string(i) + "/id";
         std::string cardName;
         if (ReadFileToString(cardPath, &cardName)) {
-            if (deviceName == "jack" && !isInput && cardName.starts_with("Headphones")) {
+            if (deviceName == "rpi" && !isInput && ::android::base::Trim(cardName) == "ad242x") {
+                return {i, 0};
+            } else if (deviceName == "jack" && !isInput && cardName.starts_with("Headphones")) {
                 LOG(INFO) << "Using PCM card " << i << " for 3.5mm audio jack";
                 cardAndDeviceId.first = i;
                 return cardAndDeviceId;
@@ -284,6 +322,10 @@ StreamPrimary::AlsaDeviceId StreamPrimary::getCardId(bool isInput) {
         }
     }
 
+    if (deviceName == "rpi") {
+        LOG(ERROR) << "A2B card ad242x missing; enable the overlay and reboot";
+        return kStubDeviceId;
+    }
     LOG(INFO) << "Could not probe PCM card for " << deviceName << ", falling back to PCM card 0";
     cardAndDeviceId.first = 0;
     return cardAndDeviceId;
