@@ -10,7 +10,8 @@ The profile is an initial bench configuration, not a hardware-qualified release.
 ```sh
 source build/envsetup.sh
 lunch aosp_rpi5_car_4gb_nvme_waveshare-caramel-userdebug
-m -j8 RPI5_AUDIO=a2b RPI5_AUDIO_INPUT=usb RPI5_A2B_PROFILE=tas5720a_1node
+# IO4 shutdown / CLKOUT1 bench wiring described below:
+m -j8 RPI5_AUDIO=a2b RPI5_AUDIO_INPUT=usb RPI5_A2B_PROFILE=tas5720a_io4_clk1
 ```
 
 | Option | Values | Default |
@@ -132,8 +133,10 @@ not signal integrity, phase, output power or board compatibility.
 
 ## TAS5720A and clock settings
 
-The default uses address **0x6c**, **left** channel and **CLKOUT2**; confirm these
-against the actual wiring/straps. No shutdown GPIO is assigned by default.
+The generic `tas5720a_1node` profile uses address **0x6c**, **left** channel and
+**CLKOUT2**; confirm these against the actual wiring/straps. No shutdown GPIO is
+assigned in that profile. The IO4/CLKOUT1 bench profile below must be selected
+explicitly for its wiring; the generic profile is not interchangeable with it.
 `start_muted: true` requires an explicit unmute after HAL startup. A root mute
 selection is retained across stream standby within that HAL process.
 
@@ -161,6 +164,47 @@ configuration once per second. A fault or PCM write failure silences PCM and
 attempts shutdown; correct the cause, then `resume` and `unmute`. Hardware fault
 protection remains necessary for loss of host power, clocks or communication.
 
+## IO4 / CLKOUT1 bench profile
+
+`tas5720a_io4_clk1` packages the following connections for one amplifier. Pin
+numbers in this table are IC pins, not evaluation-board header positions.
+
+| Connection | AD2428 subordinate | TAS5720A |
+| --- | --- | --- |
+| Shutdown, low = disabled | DTX1/IO4, pin 13 | SPK_SD, pin 7; 10 kΩ pull-down |
+| MCLK, 12.288 MHz | ADR1/IO1/CLKOUT1, pin 7 | MCLK, pin 14 |
+| BCLK, 3.072 MHz | BCLK, pin 10 | SCLK, pin 15 |
+| LRCLK, 48 kHz | SYNC, pin 11 | LRCK, pin 17 |
+| Stereo I²S data | DTX0/IO3, pin 12 | SDIN, pin 16 |
+| I²C | SDA pin 5 / SCL pin 4 | FREQ/SDA pin 8 / HW/SCL pin 9 |
+
+Pull both TAS gain pins high for software control. Pull SPK_SLEEP/ADR (pin 13)
+low for 7-bit address `0x6c`. This profile selects the left channel; right-channel
+selection remains a JSON/profile change. It sets `CLK1CFG=0x81`, `CLK2CFG=0`,
+and never enables DTX1. **Do not select CLKOUT2 on wiring that uses IO2 for power
+control.** The IO4 pull-down holds shutdown during reset; initialization preloads
+IO4 low, configures clocks and the muted amplifier, then releases IO4. Shutdown
+attempts to clear IO4 even if the amplifier's I²C shutdown write fails. Health
+checks verify the output latch, output enable and GPIO mux settings; these are
+register readbacks, not measurements of the voltage at SPK_SD.
+
+Regenerate the packaged profile (or substitute `--channel right` and a new ID):
+
+```sh
+python3 device/brcm/rpi5/audio/a2b/make_tas_profile.py \
+  device/brcm/rpi5/audio/a2b/profiles/tas5720a_io4_clk1.json \
+  --id tas5720a_io4_clk1 --amp-address 0x6c --channel left --clkout 1 --shutdown-io 4
+# After initial deployment, select the packaged profile without rebuilding:
+adb shell a2bctl select tas5720a_io4_clk1
+```
+
+This is the externally powered WB1BZ amplifier bench setup. It does not sequence
+a complete module's IO2/IO5 power controls or its local microcontroller. Those
+pins remain undriven after reset. Keep the local MCU from driving SPK_SD or
+initiating I²C transactions concurrently with the A2B controller. An optional
+SPK_FAULT connection to IO6 remains unused by this profile; faults are checked
+through TAS register `0x08`. Supply the amplifier's power before initialization.
+
 ## EVAL-AD2428WB1BZ modification
 
 ADI's EE-419 identifies **DTX1/IO4** on the unpopulated J4 footprint and its
@@ -180,7 +224,8 @@ J3 exposes SDA/SCL/GND for the amplifier's I²C connection; J4 exposes BCLK, SYN
 and DTX0 for I²S. CLKOUT must be picked up from the selected IO1/IO2 net: J4 does
 not list MCLK. Confirm the board's existing codec/clock connections before
 altering that net. The on-board ADAU1761 and EEPROM use 0x39 and 0x50 and are not
-configured by this speaker profile. TAS address 0x6c/0x6d must be confirmed.
+configured by this speaker profile. The IO4/CLKOUT1 profile expects a low TAS
+address strap (`0x6c`); confirm the physical modification matches it.
 
 **Power/ground:** this is a bus-powered subordinate board. EE-419 explicitly
 warns that its ground can differ from the main/local-power ground. Arrange an
@@ -200,7 +245,8 @@ A2B_PROFILE_DIR=device/brcm/rpi5/audio/a2b/profiles \
 ```
 
 Tests cover malformed profiles, peripheral routing/cleanup, masked updates,
-bounded polling, node mismatch, discovery failure and the bundled TAS lifecycle.
+bounded polling, node mismatch, discovery failure and the bundled TAS lifecycles,
+including IO4 sequencing, CLKOUT1 selection and shutdown after a peripheral NACK.
 Image builds check the HAL, CLI, init/SELinux policy and overlay packaging.
 Hardware acceptance still needs: wiring/address/power confirmation; successful
 discovery/readback; clock frequency/phase measurement; muted boot, unmute, volume,

@@ -78,6 +78,10 @@ class FakeBus : public Transport {
         }
         if (address == 105 && (selection & 0x20) && reg == failReg) return false;
         if (address == 104 && reg == 0x13) registers[{0, 0, 0x1a}] = discovery ? 1 : 0;
+        if (address == 105 && !(selection & 0x20)) {
+            if (reg == 0x4b) registers[key(address, 0x4a)] |= value;
+            if (reg == 0x4c) registers[key(address, 0x4a)] &= ~value;
+        }
         registers[key(address, reg)] = value;
         return true;
     }
@@ -222,6 +226,72 @@ TEST(BundledProfile, TasLifecycleAndDiscoveryFailure) {
     EXPECT_EQ(0, broken.selection);
     // Failed discovery must never configure/unmute TAS.
     EXPECT_EQ(0xfd, broken.registers[std::make_tuple(2, 108, 1)]);
+}
+
+TEST(BundledProfile, Io4ShutdownAndClkout1Lifecycle) {
+    const char* directory = std::getenv("A2B_PROFILE_DIR");
+    ASSERT_NE(nullptr, directory) << "Set A2B_PROFILE_DIR to audio/a2b/profiles";
+    std::ifstream file(std::string(directory) + "/tas5720a_io4_clk1.json");
+    ASSERT_TRUE(file.good());
+    const std::string text((std::istreambuf_iterator<char>(file)), {});
+    Profile p;
+    std::string error;
+    ASSERT_TRUE(parseProfile(text, &p, &error)) << error;
+    ASSERT_TRUE(p.data["start_muted"].asBool());
+
+    class ShutdownBus : public FakeBus {
+       public:
+        bool latchCleared = false, configured = false;
+        bool write(int address, int reg, int value) override {
+            const bool node = address == 105 && !(selection & 0x20);
+            const bool amp = address == 105 && (selection & 0x20);
+            if (node && reg == 0x4c && (value & 0x10)) latchCleared = true;
+            if (node && reg == 0x4d && (value & 0x10)) {
+                EXPECT_TRUE(latchCleared);  // Never enable an unknown/high latch.
+                EXPECT_EQ(0, registers[std::make_tuple(1, 0, 0x4a)] & 0x10);
+            }
+            if (amp && reg >= 2 && reg <= 6 && reg != 3) {
+                EXPECT_EQ(0, registers[std::make_tuple(1, 0, 0x4a)] & 0x10);
+                EXPECT_EQ(0x10, registers[std::make_tuple(1, 0, 0x4d)] & 0x10);
+                EXPECT_EQ(0x81, registers[std::make_tuple(1, 0, 0x59)]);
+                EXPECT_EQ(0, registers[std::make_tuple(1, 0, 0x5a)]);
+                EXPECT_EQ(3, registers[std::make_tuple(2, 108, 3)] & 3);
+                if (reg == 6) configured = true;
+            }
+            if (node && reg == 0x4b && (value & 0x10)) {
+                EXPECT_TRUE(configured);
+                EXPECT_EQ(3, registers[std::make_tuple(2, 108, 3)] & 3);
+            }
+            return FakeBus::write(address, reg, value);
+        }
+    } bus;
+    ASSERT_TRUE(execute(p, "init", bus, &error)) << error;
+    EXPECT_TRUE(bus.configured);
+    EXPECT_EQ(0x10, bus.registers[std::make_tuple(1, 0, 0x4d)]);
+    EXPECT_EQ(0x09, bus.registers[std::make_tuple(1, 0, 0x42)]);
+    ASSERT_TRUE(execute(p, "health", bus, &error)) << error;
+    ASSERT_TRUE(execute(p, "unmute", bus, &error)) << error;
+    EXPECT_EQ(0x80, bus.registers[std::make_tuple(2, 108, 3)]);
+
+    // A lost GPIO enable or unexpected DTX1 mux selection must fail health.
+    bus.registers[{1, 0, 0x4d}] = 0;
+    EXPECT_FALSE(execute(p, "health", bus, &error));
+    bus.registers[{1, 0, 0x4d}] = 0x10;
+    bus.registers[{1, 0, 0x42}] = 0x0b;
+    EXPECT_FALSE(execute(p, "health", bus, &error));
+    bus.registers[{1, 0, 0x42}] = 0x09;
+    ASSERT_TRUE(execute(p, "mute", bus, &error)) << error;
+    EXPECT_EQ(0x10, bus.registers[std::make_tuple(1, 0, 0x4a)]);
+    bus.failReg = 1;  // Peripheral NACK must not prevent physical shutdown.
+    EXPECT_FALSE(execute(p, "shutdown", bus, &error));
+    EXPECT_EQ(0, bus.registers[std::make_tuple(1, 0, 0x4a)] & 0x10);
+    EXPECT_EQ(0, bus.selection);
+
+    FakeBus broken;
+    broken.failReg = 6;
+    EXPECT_FALSE(execute(p, "init", broken, &error));
+    EXPECT_EQ(0, broken.registers[std::make_tuple(1, 0, 0x4a)] & 0x10);
+    EXPECT_EQ(3, broken.registers[std::make_tuple(2, 108, 3)] & 3);
 }
 }  // namespace
 }  // namespace aidl::android::hardware::audio::core::a2b

@@ -1,0 +1,963 @@
+{
+  "version": 1,
+  "id": "tas5720a_io4_clk1",
+  "description": "TAS5720A left channel; CLKOUT1; SPK_SD on IO4 (requires verified board modification)",
+  "i2c_bus": 1,
+  "main_address": 104,
+  "sample_rate": 48000,
+  "channels": 2,
+  "start_muted": true,
+  "nodes": [
+    {
+      "vendor": 173,
+      "product": 40
+    }
+  ],
+  "peripherals": {
+    "amp": {
+      "node": 0,
+      "address": 108
+    }
+  },
+  "sequences": {
+    "init": [
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 18,
+        "value": 132,
+        "note": "CONTROL"
+      },
+      {
+        "op": "delay",
+        "ms": 25
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 27,
+        "value": 119,
+        "note": "INTMSK0"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 28,
+        "value": 120,
+        "note": "INTMSK1"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 29,
+        "value": 15,
+        "note": "INTMSK2"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 15,
+        "value": 128,
+        "note": "RESPCYCS \u2014 tuned timing (ported from main 6d44fc3)"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 18,
+        "value": 1,
+        "note": "CONTROL"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 65,
+        "value": 224,
+        "note": "I2SGCFG \u2014 TDM2, 32-bit (Pi I2S native)"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 9,
+        "value": 1,
+        "note": "SWCTL"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 19,
+        "value": 128,
+        "note": "DISCVRY \u2014 tuned timing (ported from main 6d44fc3)"
+      },
+      {
+        "op": "delay",
+        "ms": 50
+      },
+      {
+        "op": "poll",
+        "target": "main",
+        "reg": 26,
+        "mask": 1,
+        "value": 1,
+        "timeout_ms": 100,
+        "note": "Discovery must complete"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 26,
+        "value": 1,
+        "note": "INTPND2"
+      },
+      {
+        "op": "verify",
+        "target": "node0",
+        "reg": 2,
+        "value": 173,
+        "mask": 255,
+        "note": "VENDOR"
+      },
+      {
+        "op": "verify",
+        "target": "node0",
+        "reg": 3,
+        "value": 40,
+        "mask": 255,
+        "note": "PRODUCT"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 76,
+        "value": 16,
+        "note": "Drive SPK_SD low before enabling IO4 output"
+      },
+      {
+        "op": "update",
+        "target": "node0",
+        "reg": 128,
+        "mask": 16,
+        "value": 0,
+        "note": "Disable GPIO forwarding for IO4"
+      },
+      {
+        "op": "update",
+        "target": "node0",
+        "reg": 78,
+        "mask": 16,
+        "value": 0,
+        "note": "Disable IO4 input"
+      },
+      {
+        "op": "update",
+        "target": "node0",
+        "reg": 77,
+        "mask": 16,
+        "value": 16,
+        "note": "Enable IO4 output; DTX1 remains disabled"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 9,
+        "value": 33,
+        "note": "SWCTL"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 10,
+        "value": 0,
+        "note": "BCDNSLOTS"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 11,
+        "value": 128,
+        "note": "LDNSLOTS"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 12,
+        "value": 0,
+        "note": "LUPSLOTS"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 63,
+        "value": 1,
+        "note": "I2CCFG"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 70,
+        "value": 0,
+        "note": "SYNCOFFSET"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 65,
+        "value": 224,
+        "note": "I2S: two 32-bit slots"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 66,
+        "value": 9,
+        "note": "DTX0 enabled, falling-edge transmit; DTX1/IO4 remains GPIO"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 67,
+        "value": 0,
+        "note": "I2SRATE"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 71,
+        "value": 0,
+        "note": "PDM disabled"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 93,
+        "value": 0,
+        "note": "PDMCTL2"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 72,
+        "value": 0,
+        "note": "ERRMGMT"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 32,
+        "value": 0,
+        "note": "TESTMODE"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 89,
+        "value": 129,
+        "note": "12.288 MHz on selected CLKOUT; other output disabled"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 90,
+        "value": 0,
+        "note": "12.288 MHz on selected CLKOUT; other output disabled"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 96,
+        "value": 0,
+        "note": "UPMASK0"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 97,
+        "value": 0,
+        "note": "UPMASK1"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 98,
+        "value": 0,
+        "note": "UPMASK2"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 99,
+        "value": 0,
+        "note": "UPMASK3"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 100,
+        "value": 0,
+        "note": "UPOFFSET"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 101,
+        "value": 3,
+        "note": "DNMASK0"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 102,
+        "value": 0,
+        "note": "DNMASK1"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 103,
+        "value": 0,
+        "note": "DNMASK2"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 104,
+        "value": 0,
+        "note": "DNMASK3"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 105,
+        "value": 0,
+        "note": "DNOFFSET"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 129,
+        "value": 0,
+        "note": "GPIOD0MSK"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 130,
+        "value": 0,
+        "note": "GPIOD1MSK"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 131,
+        "value": 0,
+        "note": "GPIOD2MSK"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 132,
+        "value": 0,
+        "note": "GPIOD3MSK"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 133,
+        "value": 0,
+        "note": "GPIOD4MSK"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 134,
+        "value": 0,
+        "note": "GPIOD5MSK"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 135,
+        "value": 0,
+        "note": "GPIOD6MSK"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 136,
+        "value": 0,
+        "note": "GPIOD7MSK"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 138,
+        "value": 0,
+        "note": "GPIODINV"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 128,
+        "value": 0,
+        "note": "GPIODEN"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 144,
+        "value": 0,
+        "note": "MBOX0CTL"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 150,
+        "value": 0,
+        "note": "MBOX1CTL"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 92,
+        "value": 0,
+        "note": "SUSCFG"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 88,
+        "value": 0,
+        "note": "I2SRRSOFFS"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 87,
+        "value": 0,
+        "note": "I2SRRCTL"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 46,
+        "value": 0,
+        "note": "TXACTL"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 48,
+        "value": 0,
+        "note": "TXBCTL"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 27,
+        "value": 119,
+        "note": "INTMSK0"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 28,
+        "value": 127,
+        "note": "INTMSK1"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 30,
+        "value": 239,
+        "note": "BECCTL"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 63,
+        "value": 0,
+        "note": "I2CCFG"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 66,
+        "value": 24,
+        "note": "I2SCFG"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 68,
+        "value": 0,
+        "note": "I2STXOFFSET"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 69,
+        "value": 0,
+        "note": "I2SRXOFFSET"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 71,
+        "value": 0,
+        "note": "PDMCTL"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 93,
+        "value": 0,
+        "note": "PDMCTL2"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 72,
+        "value": 0,
+        "note": "ERRMGMT"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 32,
+        "value": 0,
+        "note": "TESTMODE"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 89,
+        "value": 0,
+        "note": "CLK1CFG"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 90,
+        "value": 0,
+        "note": "CLK2CFG"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 129,
+        "value": 0,
+        "note": "GPIOD0MSK"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 130,
+        "value": 0,
+        "note": "GPIOD1MSK"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 131,
+        "value": 0,
+        "note": "GPIOD2MSK"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 132,
+        "value": 0,
+        "note": "GPIOD3MSK"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 133,
+        "value": 0,
+        "note": "GPIOD4MSK"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 134,
+        "value": 0,
+        "note": "GPIOD5MSK"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 135,
+        "value": 0,
+        "note": "GPIOD6MSK"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 136,
+        "value": 0,
+        "note": "GPIOD7MSK"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 138,
+        "value": 0,
+        "note": "GPIODINV"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 128,
+        "value": 0,
+        "note": "GPIODEN"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 87,
+        "value": 0,
+        "note": "I2SRRCTL"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 46,
+        "value": 0,
+        "note": "TXACTL"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 48,
+        "value": 0,
+        "note": "TXBCTL"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 30,
+        "value": 239,
+        "note": "BECCTL"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 13,
+        "value": 2,
+        "note": "DNSLOTS"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 14,
+        "value": 0,
+        "note": "UPSLOTS"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 13,
+        "value": 2,
+        "note": "DNSLOTS"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 14,
+        "value": 0,
+        "note": "UPSLOTS"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 9,
+        "value": 1,
+        "note": "SWCTL"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 9,
+        "value": 1,
+        "note": "SWCTL"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 64,
+        "value": 0,
+        "note": "PLLCTL"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 64,
+        "value": 0,
+        "note": "PLLCTL"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 16,
+        "value": 102,
+        "note": "SLOTFMT \u2014 32-bit DN/UP slots for TDM 32-bit"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 17,
+        "value": 3,
+        "note": "DATCTL"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 86,
+        "value": 0,
+        "note": "I2SRRATE"
+      },
+      {
+        "op": "write",
+        "target": "main",
+        "reg": 18,
+        "value": 1,
+        "note": "CONTROL"
+      },
+      {
+        "op": "update",
+        "target": "amp",
+        "reg": 3,
+        "value": 3,
+        "mask": 3,
+        "note": "Mute both channels"
+      },
+      {
+        "op": "update",
+        "target": "amp",
+        "reg": 1,
+        "value": 0,
+        "mask": 3,
+        "note": "Shutdown, preserve clipper"
+      },
+      {
+        "op": "delay",
+        "ms": 10
+      },
+      {
+        "op": "write",
+        "target": "amp",
+        "reg": 2,
+        "value": 4,
+        "note": "No +6 dB boost; 48 kHz I2S"
+      },
+      {
+        "op": "verify",
+        "target": "amp",
+        "reg": 2,
+        "value": 4,
+        "mask": 255
+      },
+      {
+        "op": "write",
+        "target": "amp",
+        "reg": 4,
+        "value": 206,
+        "note": "Left -0.5 dB"
+      },
+      {
+        "op": "verify",
+        "target": "amp",
+        "reg": 4,
+        "value": 206,
+        "mask": 255
+      },
+      {
+        "op": "write",
+        "target": "amp",
+        "reg": 5,
+        "value": 206,
+        "note": "Right -0.5 dB"
+      },
+      {
+        "op": "verify",
+        "target": "amp",
+        "reg": 5,
+        "value": 206,
+        "mask": 255
+      },
+      {
+        "op": "write",
+        "target": "amp",
+        "reg": 6,
+        "value": 155,
+        "note": "25 dBV, PWM 8fs, left channel"
+      },
+      {
+        "op": "verify",
+        "target": "amp",
+        "reg": 6,
+        "value": 155,
+        "mask": 255,
+        "note": "25 dBV, PWM 8fs, left channel"
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 75,
+        "value": 16,
+        "note": "Release physical SPK_SD after configuration"
+      },
+      {
+        "op": "delay",
+        "ms": 10
+      },
+      {
+        "op": "update",
+        "target": "amp",
+        "reg": 1,
+        "value": 1,
+        "mask": 3,
+        "note": "Enable, awake, still muted"
+      },
+      {
+        "op": "delay",
+        "ms": 50
+      }
+    ],
+    "mute": [
+      {
+        "op": "update",
+        "target": "amp",
+        "reg": 3,
+        "value": 3,
+        "mask": 3
+      },
+      {
+        "op": "delay",
+        "ms": 50
+      }
+    ],
+    "unmute": [
+      {
+        "op": "verify",
+        "target": "amp",
+        "reg": 8,
+        "value": 0,
+        "mask": 15
+      },
+      {
+        "op": "update",
+        "target": "amp",
+        "reg": 3,
+        "value": 0,
+        "mask": 3
+      }
+    ],
+    "shutdown": [
+      {
+        "op": "update",
+        "target": "amp",
+        "reg": 1,
+        "value": 2,
+        "mask": 3,
+        "note": "Shutdown and sleep, preserve clipper"
+      },
+      {
+        "op": "delay",
+        "ms": 10
+      },
+      {
+        "op": "write",
+        "target": "node0",
+        "reg": 76,
+        "value": 16,
+        "note": "Assert physical SPK_SD"
+      }
+    ],
+    "health": [
+      {
+        "op": "verify",
+        "target": "node0",
+        "reg": 2,
+        "value": 173,
+        "mask": 255
+      },
+      {
+        "op": "verify",
+        "target": "node0",
+        "reg": 3,
+        "value": 40,
+        "mask": 255
+      },
+      {
+        "op": "verify",
+        "target": "node0",
+        "reg": 89,
+        "value": 129,
+        "mask": 255,
+        "note": "12.288 MHz on selected CLKOUT; other output disabled"
+      },
+      {
+        "op": "verify",
+        "target": "amp",
+        "reg": 2,
+        "value": 4,
+        "mask": 255
+      },
+      {
+        "op": "verify",
+        "target": "amp",
+        "reg": 6,
+        "value": 155,
+        "mask": 255,
+        "note": "25 dBV, PWM 8fs, left channel"
+      },
+      {
+        "op": "verify",
+        "target": "amp",
+        "reg": 8,
+        "value": 0,
+        "mask": 15
+      },
+      {
+        "op": "verify",
+        "target": "node0",
+        "reg": 65,
+        "mask": 8,
+        "value": 0,
+        "note": "Serial RX on DTX1 disabled"
+      },
+      {
+        "op": "verify",
+        "target": "node0",
+        "reg": 66,
+        "mask": 2,
+        "value": 0,
+        "note": "DTX1 disabled; IO4 reserved for shutdown"
+      },
+      {
+        "op": "verify",
+        "target": "node0",
+        "reg": 128,
+        "mask": 16,
+        "value": 0,
+        "note": "IO4 forwarding disabled"
+      },
+      {
+        "op": "verify",
+        "target": "node0",
+        "reg": 77,
+        "mask": 16,
+        "value": 16,
+        "note": "IO4 output enabled"
+      },
+      {
+        "op": "verify",
+        "target": "node0",
+        "reg": 74,
+        "mask": 16,
+        "value": 16,
+        "note": "SPK_SD output latch released"
+      }
+    ]
+  }
+}

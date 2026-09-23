@@ -56,6 +56,14 @@ def main():
         init[position:position] = [write(0x4B, "Release physical SPK_SD after configuration"),
                                    dict(op="delay", ms=10)]
         sequences["shutdown"].append(write(0x4C, "Assert physical SPK_SD"))
+        for reg, mask, value, note in (
+                (0x41, 0x08, 0, "Serial RX on DTX1 disabled"),
+                (0x42, 0x02, 0, "DTX1 disabled; IO4 reserved for shutdown"),
+                (0x80, 0x10, 0, "IO4 forwarding disabled"),
+                (0x4D, 0x10, 0x10, "IO4 output enabled"),
+                (0x4A, 0x10, 0x10, "SPK_SD output latch released")):
+            sequences["health"].append(dict(op="verify", target="node0", reg=reg,
+                                             mask=mask, value=value, note=note))
     args.output.write_text(json.dumps(profile, indent=2) + "\n")
 
 
