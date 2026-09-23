@@ -228,10 +228,14 @@ TEST(BundledProfile, TasLifecycleAndDiscoveryFailure) {
     EXPECT_EQ(0xfd, broken.registers[std::make_tuple(2, 108, 1)]);
 }
 
-TEST(BundledProfile, Io4ShutdownAndClkout1Lifecycle) {
+class Io4Profile : public ::testing::TestWithParam<int> {};
+
+TEST_P(Io4Profile, ShutdownAndSelectedClockLifecycle) {
+    const int clkout = GetParam();
     const char* directory = std::getenv("A2B_PROFILE_DIR");
     ASSERT_NE(nullptr, directory) << "Set A2B_PROFILE_DIR to audio/a2b/profiles";
-    std::ifstream file(std::string(directory) + "/tas5720a_io4_clk1.json");
+    std::ifstream file(std::string(directory) + "/tas5720a_io4_clk" +
+                       std::to_string(clkout) + ".json");
     ASSERT_TRUE(file.good());
     const std::string text((std::istreambuf_iterator<char>(file)), {});
     Profile p;
@@ -241,6 +245,8 @@ TEST(BundledProfile, Io4ShutdownAndClkout1Lifecycle) {
 
     class ShutdownBus : public FakeBus {
        public:
+        explicit ShutdownBus(int clkout) : clkout(clkout) {}
+        const int clkout;
         bool latchCleared = false, configured = false;
         bool write(int address, int reg, int value) override {
             const bool node = address == 105 && !(selection & 0x20);
@@ -253,8 +259,8 @@ TEST(BundledProfile, Io4ShutdownAndClkout1Lifecycle) {
             if (amp && reg >= 2 && reg <= 6 && reg != 3) {
                 EXPECT_EQ(0, registers[std::make_tuple(1, 0, 0x4a)] & 0x10);
                 EXPECT_EQ(0x10, registers[std::make_tuple(1, 0, 0x4d)] & 0x10);
-                EXPECT_EQ(0x81, registers[std::make_tuple(1, 0, 0x59)]);
-                EXPECT_EQ(0, registers[std::make_tuple(1, 0, 0x5a)]);
+                EXPECT_EQ(clkout == 1 ? 0x81 : 0, registers[std::make_tuple(1, 0, 0x59)]);
+                EXPECT_EQ(clkout == 2 ? 0x81 : 0, registers[std::make_tuple(1, 0, 0x5a)]);
                 EXPECT_EQ(3, registers[std::make_tuple(2, 108, 3)] & 3);
                 if (reg == 6) configured = true;
             }
@@ -264,7 +270,7 @@ TEST(BundledProfile, Io4ShutdownAndClkout1Lifecycle) {
             }
             return FakeBus::write(address, reg, value);
         }
-    } bus;
+    } bus(clkout);
     ASSERT_TRUE(execute(p, "init", bus, &error)) << error;
     EXPECT_TRUE(bus.configured);
     EXPECT_EQ(0x10, bus.registers[std::make_tuple(1, 0, 0x4d)]);
@@ -293,5 +299,6 @@ TEST(BundledProfile, Io4ShutdownAndClkout1Lifecycle) {
     EXPECT_EQ(0, broken.registers[std::make_tuple(1, 0, 0x4a)] & 0x10);
     EXPECT_EQ(3, broken.registers[std::make_tuple(2, 108, 3)] & 3);
 }
+INSTANTIATE_TEST_SUITE_P(BundledProfiles, Io4Profile, ::testing::Values(1, 2));
 }  // namespace
 }  // namespace aidl::android::hardware::audio::core::a2b
