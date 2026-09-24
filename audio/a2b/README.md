@@ -299,6 +299,19 @@ Tests cover malformed profiles, peripheral routing/cleanup, masked updates,
 bounded polling, node mismatch, discovery failure and the bundled TAS lifecycles,
 including IO4 sequencing, both CLKOUT selections and shutdown after a peripheral NACK.
 Image builds check the HAL, CLI, init/SELinux policy and overlay packaging.
+After deploying and rebooting, stop playback and run the device access check:
+
+```sh
+adb root
+adb push device/brcm/rpi5/audio/a2b/check_device_access.sh /data/local/tmp/
+adb shell sh /data/local/tmp/check_device_access.sh
+```
+
+It checks root-owned profile access using the HAL's actual Unix groups, opens
+I²C bus 1 without transfers, and loads the selected profile through the HAL.
+It leaves playback muted. This catches init/ueventd permission problems that
+host profile tests cannot exercise; it does not test A2B discovery or audio.
+
 Hardware acceptance still needs: wiring/address/power confirmation; successful
 discovery/readback; clock frequency/phase measurement; muted boot, unmute, volume,
 standby/resume, reload/rollback and fault recovery; USB playback/mic regression.

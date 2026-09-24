@@ -7,7 +7,8 @@ service vendor.audio-rpi /apex/com.android.hardware.audio.rpi/bin/hw/android.har
     user audioserver
     socket a2b_control stream 0600 root root
     # media gid needed for /dev/fm (radio) and for /data/misc/media (tee)
-    group audio camera drmrpc inet media mediadrm net_bt net_bt_admin net_bw_acct wakelock context_hub
+    # Root-owned A2B profiles are readable by the audioserver group (0640/0750).
+    group audio audioserver camera drmrpc inet media mediadrm net_bt net_bt_admin net_bw_acct wakelock context_hub
     capabilities BLOCK_SUSPEND SYS_NICE
     # setting RLIMIT_RTPRIO allows binder RT priority inheritance
     rlimit rtprio 10 10
