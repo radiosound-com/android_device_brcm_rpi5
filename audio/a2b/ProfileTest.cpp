@@ -96,6 +96,21 @@ class FakeBus : public Transport {
     int64_t nowMs() const override { return elapsed; }
 };
 
+TEST(Profile, FaultReportIncludesReadbackAndRestoresRouting) {
+    auto p = fixture();
+    auto& check = p.data["sequences"]["health"][0];
+    check["reg"] = 8;
+    check["mask"] = 15;
+    check["value"] = 0;
+    FakeBus bus;
+    bus.registers[{2, 108, 8}] = 0x28;
+    std::string error;
+    EXPECT_FALSE(execute(p, "health", bus, &error));
+    EXPECT_NE(error.find("target=amp reg=0x08 actual=0x28 expected=0x00 mask=0x0f"),
+              std::string::npos);
+    EXPECT_EQ(0, bus.selection);
+}
+
 TEST(Profile, RejectsTyposRangesAndRoutingEscape) {
     const auto good = fixture();
     ASSERT_TRUE(validate(good));

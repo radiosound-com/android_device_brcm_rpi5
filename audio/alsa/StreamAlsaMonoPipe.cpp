@@ -97,8 +97,6 @@ StreamAlsaMonoPipe::~StreamAlsaMonoPipe() {
     mAlsaDeviceProxies = std::move(alsaDeviceProxies);
     mSources = std::move(sources);
     mSinks = std::move(sinks);
-    mClockFrames = 0;
-    mClockError = false;
     mIoThreadIsRunning = true;
     for (size_t i = 0; i < mAlsaDeviceProxies.size(); ++i) {
         mIoThreads.emplace_back(
@@ -106,19 +104,6 @@ StreamAlsaMonoPipe::~StreamAlsaMonoPipe() {
                 this, i);
     }
     return ::android::OK;
-}
-
-bool StreamAlsaMonoPipe::waitForOutputClock() {
-    if (mAlsaDeviceProxies.empty()) return false;
-    const auto& config = mAlsaDeviceProxies[0].get()->alsa_config;
-    if (config.rate != 48000 || config.channels != 2) return false;
-    const uint64_t threshold = std::max<uint64_t>(config.start_threshold,
-            uint64_t(config.period_size) * config.period_count) + config.period_size;
-    for (int i = 0; i < 1000 && !mClockError; ++i) {
-        if (mClockFrames >= threshold) return true;
-        usleep(1000);
-    }
-    return false;
 }
 
 ::android::status_t StreamAlsaMonoPipe::transfer(void* buffer, size_t frameCount,
@@ -223,24 +208,10 @@ void StreamAlsaMonoPipe::outputIoThread(size_t idx) {
     std::vector<char> buffer(bufferSize);
     while (mIoThreadIsRunning) {
         ssize_t framesReadOrError = mSources[idx]->read(&buffer[0], mBufferSizeFrames);
-        if (mKeepOutputClock) {
-            const size_t readFrames = std::max<ssize_t>(0, framesReadOrError);
-            if (silenceOutput()) std::fill(buffer.begin(), buffer.end(), 0);
-            else std::fill(buffer.begin() + readFrames * mFrameSizeBytes, buffer.end(), 0);
-            framesReadOrError = mBufferSizeFrames;
-        }
         if (framesReadOrError > 0) {
             int ret = proxy_write_with_retries(mAlsaDeviceProxies[idx].get(), &buffer[0],
                                                framesReadOrError * mFrameSizeBytes,
                                                mReadWriteRetries);
-            if (mKeepOutputClock && idx == 0) {
-                if (ret == 0) mClockFrames += framesReadOrError;
-                else if (mIoThreadIsRunning) {
-                    mClockError = true;
-                    outputClockFailed();
-                    usleep(10000);  // Do not spin on a disconnected/failed PCM.
-                }
-            }
             // Errors when the stream is being stopped are expected.
             LOG_IF(WARNING, ret != 0 && mIoThreadIsRunning)
                     << __func__ << "[" << idx << "]: Error writing into ALSA: " << ret;

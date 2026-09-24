@@ -33,8 +33,30 @@ can remain connected. `none` simulates primary input, not a global capture ban.
 
 The HAL/APEX, CLI, SELinux policy and default profiles require an initial image
 build/deployment. The vendor audio APEX is not an independently updatable APK.
+On a development Pi, a rebuilt audio APEX can be copied to the remounted vendor
+partition and activated by reboot; keep a copy of the previous APEX for rollback.
 Later profile changes do not require a HAL rebuild. Build properties are defaults:
 an existing persistent output/profile selection survives an image update.
+
+## Continuous A2B clock
+
+The first A2B output stream opens a process-owned PCM at 48 kHz, stereo, S32_LE
+(64 bit clocks per frame). A realtime writer feeds zeros whenever there is no
+audio. Android pause, flush, standby, stream destruction/recreation, mute,
+profile reload, quiesce and amplifier/discovery faults do not close that PCM.
+A partial wake lock prevents system suspend after the clock starts. USB playback
+and capture retain their existing per-stream lifecycle.
+
+`a2bctl status` includes `clock`, `clock_frames` and `clock_errors`. Frames must
+continue increasing with `streams=0`. Initialization failures retain clocks and
+silence for diagnosis; correct the fault and use `resume`. Idle/resumed Android
+tracks do not automatically reset the A2B network. Register verification errors
+include target, register, actual value, expected value and mask.
+
+The writer cannot survive a HAL process restart, reboot, power loss or a hardware
+failure. Changing output with `a2bctl output` explicitly restarts the HAL and
+therefore interrupts clocks. Do not switch output modes during an A2B session
+that needs uninterrupted clocks.
 
 ## Profiles and runtime changes
 
@@ -61,10 +83,11 @@ adb shell a2bctl unmute
 
 `install` validates and atomically replaces the override, retaining the previous
 override as `.previous`. `select ID` validates again and selects the profile. With
-playback active it mutes, shuts down, initializes and verifies the new network
-while the PCM thread maintains clocks with silence. It always returns muted;
-use `unmute` explicitly. Without playback it stages the selection: hardware
-initialization/readback happens when the next output stream starts.
+the A2B clock started it mutes the amplifier, initializes and verifies the new
+network while the persistent PCM writer maintains clocks with silence, even if
+Android playback is idle. It always returns muted; use `unmute` explicitly.
+Before the first output stream starts, selection is staged. While quiesced,
+selection is also staged until `resume`.
 
 A failed active reload attempts to restore the old in-memory profile, still
 muted. The installed file remains available for diagnosis. `a2bctl rollback ID`
@@ -78,7 +101,7 @@ Other commands:
 
 ```sh
 adb shell a2bctl mute
-adb shell a2bctl shutdown     # Mute + software shutdown; prevent new activation
+adb shell a2bctl shutdown     # Shut down amplifier; retain PCM clocks
 adb shell a2bctl resume       # Reinitialize, remain muted; unmute separately
 adb shell a2bctl output usb   # Quiesce then restart audio; playback is interrupted
 adb shell a2bctl output a2b   # Requires an enabled overlay and card ad242x
@@ -117,7 +140,7 @@ All five sequences are required:
 | `init` | Discovery, clocks, slots, peripheral setup; leave amplifier muted |
 | `mute` | Mute with settling delay while clocks remain present |
 | `unmute` | Check faults and release mute |
-| `shutdown` | Disable amplifier before PCM clocks stop |
+| `shutdown` | Disable amplifier; continuous PCM clocks remain running |
 | `health` | Read-only verification while a stream is active |
 
 Operations: `write`, `update`, `verify`, `poll`, `delay`. Register operations

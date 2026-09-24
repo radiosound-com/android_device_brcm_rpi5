@@ -51,8 +51,6 @@ class StreamPrimary : public StreamAlsaMonoPipe {
   protected:
     std::vector<alsa::DeviceProfile> getDeviceProfiles() override;
     bool isStubStream();
-    bool silenceOutput() const override;
-    void outputClockFailed() override;
 
     const bool mIsAsynchronous;
     int64_t mStartTimeNs = 0;
@@ -85,7 +83,8 @@ class StreamPrimary : public StreamAlsaMonoPipe {
 
     // Used by the worker thread only.
     AlsaDeviceId mCurrAlsaDeviceId = kStubDeviceId;
-    bool mA2bAcquired = false;
+    bool mUseA2b = false;
+    uint64_t mA2bClient = 0;
     void releaseA2b();
 };
 

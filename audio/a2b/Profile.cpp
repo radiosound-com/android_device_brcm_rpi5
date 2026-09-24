@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <chrono>
 #include <memory>
+#include <iomanip>
+#include <sstream>
 #include <string_view>
 
 namespace aidl::android::hardware::audio::core::a2b {
@@ -168,6 +170,7 @@ bool execute(const Profile& p, const std::string& phase, Transport& t, std::stri
     for (const auto& o : p.data["sequences"][phase]) {
         ok = true;
         const auto op = o["op"].asString();
+        int lastRead = -1;
         if (op == "delay") {
             t.delay(o["ms"].asInt());
         } else {
@@ -184,6 +187,7 @@ bool execute(const Profile& p, const std::string& phase, Transport& t, std::stri
                 const int64_t deadline = t.nowMs() + o["timeout_ms"].asInt();
                 do {
                     ok = t.read(address, reg, &value);
+                    if (ok) lastRead = value;
                     if (!ok || (value & mask) == wanted) break;
                     const int64_t remaining = deadline - t.nowMs();
                     if (op != "poll" || remaining <= 0) {
@@ -200,7 +204,21 @@ bool execute(const Profile& p, const std::string& phase, Transport& t, std::stri
         // delay. Only remote operations alter routing and require cleanup.
         const bool restored = op == "delay" || o["target"] == "main" || t.write(main, 1, 0);
         if (!ok || !restored) {
-            if (allOk) fail(error, phase + " operation " + std::to_string(index) + " failed");
+            if (allOk) {
+                std::ostringstream detail;
+                detail << phase << " operation " << index << " failed";
+                if (op != "delay") {
+                    detail << " target=" << o["target"].asString() << " reg=0x"
+                           << std::hex << std::setfill('0') << std::setw(2) << o["reg"].asInt();
+                    if (lastRead >= 0)
+                        detail << " actual=0x" << std::setw(2) << lastRead
+                               << " expected=0x" << std::setw(2) << o["value"].asInt()
+                               << " mask=0x" << std::setw(2) << o["mask"].asInt();
+                    else if (!ok) detail << " I2C transfer failed";
+                }
+                if (!restored) detail << " NODEADR restore failed";
+                fail(error, detail.str());
+            }
             allOk = false;
             // Independent GPIO shutdown must still be attempted if the amp NACKs.
             if (phase != "shutdown" && phase != "mute") break;

@@ -1,5 +1,6 @@
 #!/system/bin/sh
-# Run as root on an idle development device after boot. No I2C transfers or unmute.
+# Run as root on an idle development device after boot. Never unmutes.
+# If the A2B clock has started, select also reinitializes the network while muted.
 set -eu
 
 [ "$(id -u)" = 0 ] || { echo "Run with adb root" >&2; exit 1; }

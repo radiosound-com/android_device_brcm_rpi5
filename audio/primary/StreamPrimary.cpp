@@ -30,6 +30,7 @@
 #include <error/expected_utils.h>
 
 #include "a2b/A2bController.h"
+#include "a2b/A2bPcm.h"
 #include "core-impl/StreamPrimary.h"
 
 using aidl::android::hardware::audio::common::SinkMetadata;
@@ -63,18 +64,11 @@ StreamPrimary::~StreamPrimary() {
     cleanupWorker();
 }
 
-bool StreamPrimary::silenceOutput() const {
-    return !a2b::A2bController::getInstance().allowAudio();
-}
-
-void StreamPrimary::outputClockFailed() {
-    a2b::A2bController::getInstance().clockFailed();
-}
-
 void StreamPrimary::releaseA2b() {
-    if (mA2bAcquired) {
+    if (mA2bClient) {
+        a2b::A2bPcm::getInstance().output().detach(mA2bClient);
         a2b::A2bController::getInstance().release();
-        mA2bAcquired = false;
+        mA2bClient = 0;
     }
 }
 
@@ -83,6 +77,10 @@ void StreamPrimary::releaseA2b() {
 }
 
 ::android::status_t StreamPrimary::flush() {
+    if (mUseA2b) {
+        if (mA2bClient) a2b::A2bPcm::getInstance().output().clear(mA2bClient);
+        return ::android::OK;
+    }
     RETURN_STATUS_IF_ERROR(isStubStreamOnWorker() ? mStubDriver.flush()
                                                   : StreamAlsaMonoPipe::flush());
     // TODO(b/372951987): consider if this needs to be done from 'StreamInWorkerLogic::cycle'.
@@ -90,11 +88,16 @@ void StreamPrimary::releaseA2b() {
 }
 
 ::android::status_t StreamPrimary::pause() {
+    if (mUseA2b) {
+        releaseA2b();
+        return ::android::OK;
+    }
     return isStubStreamOnWorker() ? mStubDriver.pause() : StreamAlsaMonoPipe::pause();
 }
 
 ::android::status_t StreamPrimary::standby() {
     releaseA2b();
+    if (mUseA2b) return ::android::OK;
     return isStubStreamOnWorker() ? mStubDriver.standby() : StreamAlsaMonoPipe::standby();
 }
 
@@ -140,11 +143,20 @@ void StreamPrimary::releaseA2b() {
             return mStubDriver.start();
         }
 
-        if (mAlsaDeviceProxies.empty()) {
-            mKeepOutputClock = !mIsInput && GetProperty("persist.vendor.audio.device", "") == "rpi";
+        mUseA2b = !mIsInput && GetProperty("persist.vendor.audio.device", "") == "rpi";
+        if (mUseA2b) {
+            if (mSampleRate != 48000 || !mConfig || mConfig->channels != 2 ||
+                mConfig->format != PCM_FORMAT_S16_LE) return ::android::BAD_VALUE;
+            // The process-owned writer continues through standby, close, faults,
+            // profile reload and quiesce. Android streams only supply samples.
+            auto& pcm = a2b::A2bPcm::getInstance();
+            RETURN_STATUS_IF_ERROR(pcm.start(mCurrAlsaDeviceId.first, mCurrAlsaDeviceId.second));
+            if (!mA2bClient) {
+                mA2bClient = pcm.output().attach();
+                a2b::A2bController::getInstance().acquire();
+            }
+            break;
         }
-        if (mKeepOutputClock && (mSampleRate != 48000 || !mConfig || mConfig->channels != 2))
-            return ::android::BAD_VALUE;
         const ::android::status_t status = StreamAlsaMonoPipe::start();
         if (status == ::android::OK || !canRetryHardwareCard || attempt + 1 == kHardwareStartAttempts) {
             RETURN_STATUS_IF_ERROR(status);
@@ -161,16 +173,6 @@ void StreamPrimary::releaseA2b() {
         mAlsaDeviceId = kStubDeviceId;
         mCurrAlsaDeviceId = kStubDeviceId;
     }
-    if (mKeepOutputClock && !mA2bAcquired) {
-        const ::android::status_t a2bStatus = waitForOutputClock()
-                ? a2b::A2bController::getInstance().acquire() : ::android::NO_INIT;
-        if (a2bStatus != ::android::OK) {
-            LOG(ERROR) << "A2B initialization failed; stopping the ALSA stream";
-            StreamAlsaMonoPipe::shutdown();
-            return a2bStatus;
-        }
-        mA2bAcquired = true;
-    }
     mStartTimeNs = ::android::uptimeNanos();
     mFramesSinceStart = 0;
     mSkipNextTransfer = false;
@@ -184,7 +186,17 @@ void StreamPrimary::releaseA2b() {
     }
     // This is a workaround for the emulator implementation which has a host-side buffer
     // and is not being able to achieve real-time behavior similar to ADSPs (b/302587331).
-    if (!mSkipNextTransfer) {
+    if (mUseA2b) {
+        if (!mA2bClient) return ::android::INVALID_OPERATION;
+        alsa::applyGain(buffer, mGain, frameCount * mFrameSizeBytes, mConfig->format, 2);
+        auto& output = a2b::A2bPcm::getInstance().output();
+        const size_t written = output.enqueue(mA2bClient,
+                {static_cast<const int16_t*>(buffer), frameCount * 2});
+        if (written != frameCount) LOG(WARNING) << "A2B audio queue full, dropped "
+                                               << frameCount - written << " frames";
+        *actualFrameCount = frameCount;
+        *latencyMs = a2b::A2bPcm::kLatencyMs + output.queuedFrames(mA2bClient) / 48;
+    } else if (!mSkipNextTransfer) {
         RETURN_STATUS_IF_ERROR(
                 StreamAlsaMonoPipe::transfer(buffer, frameCount, actualFrameCount, latencyMs));
     } else {
@@ -219,6 +231,9 @@ void StreamPrimary::releaseA2b() {
     if (isStubStreamOnWorker()) {
         return ::android::OK;
     }
+    // The persistent PCM counts idle silence as well as audio; its lifetime
+    // position is not an Android stream presentation position.
+    if (mUseA2b) return ::android::OK;
     const bool refinePosition =
             GetBoolProperty("persist.vendor.audio.refine_position", true);
     if (refinePosition) {

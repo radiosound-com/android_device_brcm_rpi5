@@ -21,6 +21,7 @@ cc_defaults {
         "libcutils",
         "libfmq",
         "liblog",
+        "libpower",
         "libmedia_helper",
         "libnbaio_mono",
         "libstagefright_foundation",
@@ -59,6 +60,8 @@ cc_library {
     srcs: [
         "AidlConversionXsdc.cpp",
         "a2b/A2bController.cpp",
+        "a2b/A2bPcm.cpp",
+        "a2b/ContinuousOutput.cpp",
         "a2b/Profile.cpp",
         "AudioPolicyConfigXmlConverter.cpp",
         "Bluetooth.cpp",
@@ -310,4 +313,10 @@ cc_test_host {
     static_libs: ["libjsoncpp"],
     cflags: ["-Wall", "-Wextra", "-Werror"],
     data: ["a2b/profiles/*.json"],
+}
+
+cc_test_host {
+    name: "rpi_a2b_continuous_output_test",
+    srcs: ["a2b/ContinuousOutput.cpp", "a2b/ContinuousOutputTest.cpp"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
 }

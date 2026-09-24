@@ -15,9 +15,9 @@ class A2bController final {
    public:
     static A2bController& getInstance();
     void startControlServer();
-    // Acquire after PCM silence has established clocks; release before stopping
-    // PCM. Capture streams must never acquire this controller.
-    ::android::status_t acquire();
+    // Playback clients attach after the persistent PCM establishes clocks.
+    // Releasing the last client never shuts down the bus or stops clocks.
+    void acquire();
     void release();
     bool allowAudio() const { return mAllowAudio.load() && !mClockFailed.load(); }
     void clockFailed() {
@@ -40,6 +40,7 @@ class A2bController final {
     std::string mError;
     unsigned mUsers = 0;
     bool mReady = false;
+    bool mClockStarted = false;
     bool mQuiesced = false;
     std::optional<bool> mMuted;
     std::atomic<bool> mAllowAudio = false;

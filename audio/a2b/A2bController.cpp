@@ -1,6 +1,7 @@
 // Copyright 2026 Radio Sound, Inc. SPDX-License-Identifier: Apache-2.0
 #define LOG_TAG "AHAL_A2B"
 #include "A2bController.h"
+#include "A2bPcm.h"
 
 #include <android-base/file.h>
 #include <android-base/logging.h>
@@ -105,6 +106,10 @@ bool A2bController::stop() {
 bool A2bController::initialize() {
     mAllowAudio = false;
     mReady = false;
+    if (mProfile.id().empty()) {
+        mError = "no valid profile selected; select a valid profile before resume";
+        return false;
+    }
     mTransport = std::make_unique<I2cTransport>(mProfile.data["i2c_bus"].asInt());
     if (!run("init") || !verifyNodes(mProfile, *mTransport, &mError) || !run("health") ||
         !run("mute")) {
@@ -129,32 +134,20 @@ bool A2bController::initialize() {
     mError.clear();
     return true;
 }
-::android::status_t A2bController::acquire() {
+void A2bController::acquire() {
     std::lock_guard lock(mLock);
-    if (mQuiesced) return ::android::INVALID_OPERATION;
-    if (mUsers != 0) {
-        if (!mReady) return ::android::NO_INIT;
-        ++mUsers;
-        return ::android::OK;
-    }
-    mClockFailed = false;
+    ++mUsers;
+    if (mClockStarted) return;
+    mClockStarted = true;
     const std::string id = ::android::base::GetProperty(kProfileProperty, "tas5720a_1node");
-    // File replacement is staging only. Use reload to adopt edits; standby must
-    // not silently retry a rejected override after a successful in-memory rollback.
-    if ((mProfile.id() != id && !load(id, &mProfile)) || !initialize()) {
-        LOG(ERROR) << "A2B start failed: " << mError;
-        mTransport.reset();
-        return ::android::NO_INIT;
-    }
-    mUsers = 1;
-    return ::android::OK;
+    if (!load(id, &mProfile)) return;
+    // A failed initialization leaves the continuous PCM running with silence.
+    // Recovery is explicit (resume/reload), not a reset on each Android track.
+    if (!mQuiesced && !initialize()) LOG(ERROR) << "A2B start failed: " << mError;
 }
 void A2bController::release() {
     std::lock_guard lock(mLock);
-    if (mUsers && --mUsers == 0) {
-        stop();
-        mTransport.reset();
-    }
+    if (mUsers) --mUsers;
 }
 std::string A2bController::command(const std::string& request) {
     std::lock_guard lock(mLock);
@@ -163,16 +156,17 @@ std::string A2bController::command(const std::string& request) {
         return "OK profile=" + mProfile.id() + " streams=" + std::to_string(mUsers) +
                " ready=" + std::to_string(mReady) +
                " audible=" + std::to_string(mAllowAudio.load()) +
-               " quiesced=" + std::to_string(mQuiesced) + " error=" + mError;
+               " quiesced=" + std::to_string(mQuiesced) +
+               A2bPcm::getInstance().status() + " error=" + mError;
     } else if (request.starts_with("reload ")) {
         Profile candidate;
         if (!load(request.substr(7), &candidate)) return "ERROR " + mError;
         const Profile previous = mProfile;
-        if (mUsers && !stop()) return "ERROR " + mError;
+        if (mClockStarted && !stop()) return "ERROR " + mError;
         mTransport.reset();
         mProfile = std::move(candidate);
         mMuted = true;
-        if (mUsers && !initialize()) {
+        if (mClockStarted && !mQuiesced && !initialize()) {
             const std::string error = mError;
             mProfile = previous;
             initialize();  // Attempt rollback, still muted. Report original failure.
@@ -184,11 +178,11 @@ std::string A2bController::command(const std::string& request) {
     } else if (request == "mute") {
         mAllowAudio = false;
         mMuted = true;
-        if (mUsers) ok = run("mute");
+        if (mClockStarted) ok = run("mute");
     } else if (request == "unmute") {
-        if (mQuiesced || (mUsers && !mReady)) return "ERROR resume/reload before unmute";
+        if (mQuiesced || (mClockStarted && !mReady)) return "ERROR resume/reload before unmute";
         mMuted = false;
-        if (mUsers) {
+        if (mClockStarted) {
             ok = !mClockFailed && run("health") && run("unmute");
             if (!ok) {
                 stop();
@@ -199,12 +193,12 @@ std::string A2bController::command(const std::string& request) {
     } else if (request == "shutdown" || request == "quiesce") {
         mMuted = true;
         mQuiesced = true;
-        if (mUsers) ok = stop();
+        if (mClockStarted) ok = stop();
     } else if (request == "resume") {
         mQuiesced = false;
         mMuted = true;
         mClockFailed = false;
-        if (mUsers) {
+        if (mClockStarted) {
             stop();
             ok = initialize();
         }
@@ -214,7 +208,7 @@ std::string A2bController::command(const std::string& request) {
 }
 void A2bController::checkHealth() {
     std::lock_guard lock(mLock);
-    if (!mUsers || !mReady) return;
+    if (!mClockStarted || !mReady || mQuiesced) return;
     if (mClockFailed || !run("health")) {
         const std::string error = mClockFailed ? "PCM clock/write failure" : mError;
         mMuted = true;
