@@ -16,7 +16,7 @@ def main():
     parser.add_argument("--amp-address", type=lambda s: int(s, 0), choices=(0x6C, 0x6D), required=True)
     parser.add_argument("--channel", choices=("left", "right"), default="left")
     parser.add_argument("--clkout", type=int, choices=(1, 2), default=2)
-    parser.add_argument("--shutdown-io", type=int, choices=(4,), help="DTX1/IO4, after checking J4/D9 wiring")
+    parser.add_argument("--shutdown-io", type=int, choices=(4,), help="DTX1/IO4, after verifying board pickup, loading and shutdown pull-down")
     args = parser.parse_args()
     if not re.fullmatch(r"[a-z0-9_-]{1,64}", args.id):
         parser.error("ID must be 1..64 lowercase letters, digits, _ or -")

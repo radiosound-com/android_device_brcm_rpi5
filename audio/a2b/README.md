@@ -1,7 +1,7 @@
 # Raspberry Pi A2B audio
 
 One HAL supports USB and A2B playback. The A2B prototype is Pi 5 → AD2428MINI
-main → one AD2428 subordinate → one TAS5720A amplifier/speaker. Transport is
+main → one AD2428MINI subordinate → one TAS5720A amplifier/speaker. Transport is
 48 kHz stereo I²S with two 32-bit slots; the mono amplifier selects one channel.
 The profile is an initial bench configuration, not a hardware-qualified release.
 
@@ -10,8 +10,8 @@ The profile is an initial bench configuration, not a hardware-qualified release.
 ```sh
 source build/envsetup.sh
 lunch aosp_rpi5_car_4gb_nvme_waveshare-caramel-userdebug
-# IO4 shutdown / CLKOUT2 bench wiring described below:
-m -j8 RPI5_AUDIO=a2b RPI5_AUDIO_INPUT=usb RPI5_A2B_PROFILE=tas5720a_io4_clk2
+# AD2428MINI subordinate: IO4 shutdown / CLKOUT1 bench wiring described below:
+m -j8 RPI5_AUDIO=a2b RPI5_AUDIO_INPUT=usb RPI5_A2B_PROFILE=tas5720a_io4_clk1
 ```
 
 | Option | Values | Default |
@@ -46,7 +46,7 @@ it explicitly. This maintenance CLI is for `userdebug`/`eng` images with `adb ro
 ```sh
 # On the development machine, generate a board-specific candidate:
 python3 device/brcm/rpi5/audio/a2b/make_tas_profile.py speaker.json \
-  --id speaker --amp-address 0x6c --channel left --clkout 2
+  --id speaker --amp-address 0x6c --channel left --clkout 1
 # Add --shutdown-io 4 only AFTER verifying and making the board modification.
 
 adb root
@@ -194,18 +194,20 @@ attempts to clear IO4 even if the amplifier's I²C shutdown write fails. Health
 checks verify the output latch, output enable and GPIO mux settings; these are
 register readbacks, not measurements of the voltage at SPK_SD.
 
-Regenerate the CLKOUT2 profile (use `--clkout 1` with the CLKOUT1 ID/path for
+Regenerate the CLKOUT1 profile (use `--clkout 2` with the CLKOUT2 ID/path for
 the other wiring, or substitute `--channel right` and a new ID):
 
 ```sh
 python3 device/brcm/rpi5/audio/a2b/make_tas_profile.py \
-  device/brcm/rpi5/audio/a2b/profiles/tas5720a_io4_clk2.json \
-  --id tas5720a_io4_clk2 --amp-address 0x6c --channel left --clkout 2 --shutdown-io 4
+  device/brcm/rpi5/audio/a2b/profiles/tas5720a_io4_clk1.json \
+  --id tas5720a_io4_clk1 --amp-address 0x6c --channel left --clkout 1 --shutdown-io 4
 # After initial deployment, select the packaged profile without rebuilding:
-adb shell a2bctl select tas5720a_io4_clk2
+adb root
+adb shell a2bctl select tas5720a_io4_clk1
+adb shell a2bctl status
 ```
 
-These are externally powered WB1BZ amplifier bench setups. They do not sequence
+These profiles assume an externally powered amplifier. They do not sequence
 a complete module's power controls or its local microcontroller. IO5 remains
 undriven; IO2 is undriven with CLKOUT1, or a clock output with CLKOUT2. Keep the
 local MCU from driving SPK_SD or
@@ -213,7 +215,48 @@ initiating I²C transactions concurrently with the A2B controller. An optional
 SPK_FAULT connection to IO6 remains unused by this profile; faults are checked
 through TAS register `0x08`. Supply the amplifier's power before initialization.
 
-## EVAL-AD2428WB1BZ modification
+## AD2428MINI subordinate: current bench wiring
+
+Use `tas5720a_io4_clk1`. It enables CLKOUT1 at 12.288 MHz, disables CLKOUT2,
+and retains IO4 shutdown. This is the same register profile already packaged in
+the CLKOUT1 image; changing evaluation boards does not require a new clock profile.
+An existing persistent CLKOUT2 selection must be changed with `a2bctl select`
+even after installing an image whose build default is CLKOUT1.
+
+The [MINI manual, sections 3-5 through 3-9](https://www.analog.com/media/en/technical-documentation/user-guides/adzs-ad2428mini_manual.pdf#page=14)
+documents these P2 connections:
+
+| MINI P2 | TAS connection |
+| --- | --- |
+| 12, IO1/CLKOUT1 | MCLK, pin 14 |
+| 3, BCLK | SCLK, pin 15 |
+| 7, SYNC | LRCK, pin 17 |
+| 27, I2C_SCL | HW/SCL, pin 9 |
+| 31, I2C_SDA | FREQ/SDA, pin 8 |
+| 1 or 2, GND | Amplifier logic ground |
+
+**Data and shutdown pickup points still need confirmation:** the manual labels
+P2 pins 11/15/19/23 as SIO0/1/2/3 without mapping them to DTX/DRX. Check the MINI
+schematic or continuity to AD2428 DTX0 (IC pin 12) for TAS SDIN, and DTX1/IO4
+(IC pin 13) for SPK_SD. Do not transfer the WB1BZ J4 pinout to P2.
+
+Set P3 2-3 for 3.3 V I/O and P4 2-3 for AD2428 address `0x68` on both MINIs;
+reserve `0x6c` on the subordinate I²C bus for the TAS. IO1 also drives LED DS3:
+check its loading and measure MCLK at the amplifier. Connect main P10 to
+subordinate P9. Power jumpers are:
+
+| Mode | P5 | P6 | P7 | P8 |
+| --- | --- | --- | --- | --- |
+| Local power, 12 V at P2-32 | Removed | 2-3 | Removed | 1-2 |
+| Bus-powered subordinate | 1-2 | 1-2 | 1-2 | Removed |
+
+Choose the subordinate's power mode to match the actual supply/ground arrangement
+before bring-up. These jumper options are not a hardware validation of either
+configuration with this profile. In bus-power mode, account for the subordinate
+ground offset when connecting an external amplifier supply or test equipment.
+Supply speaker power separately; P2 regulator outputs are not speaker supplies.
+
+## EVAL-AD2428WB1BZ modification (previous bench option)
 
 ADI's EE-419 identifies **DTX1/IO4** on the unpopulated J4 footprint and its
 connection to LED D9. It is a candidate SPK_SD output because this profile uses
