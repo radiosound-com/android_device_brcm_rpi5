@@ -47,11 +47,26 @@ profile reload, quiesce and amplifier/discovery faults do not close that PCM.
 A partial wake lock prevents system suspend after the clock starts. USB playback
 and capture retain their existing per-stream lifecycle.
 
+Playback writes wait for space in the client queue, paced by the PCM consumer.
+Every frame in an Android buffer is retained even when its size (typically 4096
+frames) is not a multiple of the 240-frame PCM period. A2B does not also use the
+emulator's wall-clock sleep. Flush and detach wake a blocked producer and cancel
+its remaining input; the writer continues with silence.
+
 `a2bctl status` includes `clock`, `clock_frames` and `clock_errors`. Frames must
 continue increasing with `streams=0`. Initialization failures retain clocks and
 silence for diagnosis; correct the fault and use `resume`. Idle/resumed Android
 tracks do not automatically reset the A2B network. Register verification errors
 include target, register, actual value, expected value and mask.
+
+Queue diagnostics include `queue_frames` (current occupancy), `queue_waits`
+(normal producer backpressure), `queue_underruns`, `queue_starved_frames`, and
+`queue_canceled_frames` (explicit flush/detach cancellation). Underrun counters
+track shortages after an audible client has supplied its first buffer. A track
+ending before Android detaches its client can increment them, so compare their
+deltas during uninterrupted playback. Idle PCM silence without a started client
+is not an underrun. `clock_errors` counts failed writes returned by tinyalsa;
+it does not expose hardware xruns recovered internally by that library.
 
 The writer cannot survive a HAL process restart, reboot, power loss or a hardware
 failure. Changing output with `a2bctl output` explicitly restarts the HAL and

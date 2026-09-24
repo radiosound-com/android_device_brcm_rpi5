@@ -1,6 +1,7 @@
 // Copyright 2026 Radio Sound, Inc. SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include <atomic>
+#include <condition_variable>
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -24,8 +25,14 @@ class ContinuousOutput final {
     Client attach();
     void detach(Client client);
     void clear(Client client);
+    // Backpressure follows PCM consumption; a flush/detach cancels this call.
     size_t enqueue(Client client, std::span<const int16_t> samples);
     size_t queuedFrames(Client client) const;
+    struct Statistics {
+        uint64_t producerWaits = 0, underruns = 0, starvedFrames = 0, canceledFrames = 0;
+        size_t queuedFrames = 0;
+    };
+    Statistics statistics() const;
     uint64_t framesWritten() const { return mFramesWritten.load(); }
     uint64_t writeErrors() const { return mWriteErrors.load(); }
     bool healthy() const { return mHealthy.load(); }
@@ -34,12 +41,16 @@ class ContinuousOutput final {
     struct Queue {
         std::vector<int32_t> samples = std::vector<int32_t>(kQueueFrames * 2);
         size_t read = 0, count = 0;
+        uint64_t generation = 0;
+        bool started = false, underrunning = false;
     };
     void run();
     const Write mWrite;
     const std::function<bool()> mAudible;
     const std::function<void()> mFault, mThreadInit;
     mutable std::mutex mLock;
+    std::condition_variable mSpaceAvailable;
+    Statistics mStatistics;
     std::map<Client, Queue> mClients;
     Client mNextClient = 1;
     std::atomic<bool> mRunning = true, mHealthy = false;

@@ -76,8 +76,14 @@ A2bPcm& A2bPcm::getInstance() {
 }
 std::string A2bPcm::status() {
     std::lock_guard lock(mLock);
+    const auto stats = mOutput ? mOutput->statistics() : ContinuousOutput::Statistics{};
     return std::string(" clock=") + (mOutput ? (mOutput->healthy() ? "running" : "error") : "not_started") +
            " clock_frames=" + std::to_string(mOutput ? mOutput->framesWritten() : 0) +
-           " clock_errors=" + std::to_string(mOutput ? mOutput->writeErrors() : 0);
+           " clock_errors=" + std::to_string(mOutput ? mOutput->writeErrors() : 0) +
+           " queue_frames=" + std::to_string(stats.queuedFrames) +
+           " queue_waits=" + std::to_string(stats.producerWaits) +
+           " queue_underruns=" + std::to_string(stats.underruns) +
+           " queue_starved_frames=" + std::to_string(stats.starvedFrames) +
+           " queue_canceled_frames=" + std::to_string(stats.canceledFrames);
 }
 }  // namespace aidl::android::hardware::audio::core::a2b

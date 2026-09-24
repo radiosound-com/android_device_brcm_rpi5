@@ -192,10 +192,12 @@ void StreamPrimary::releaseA2b() {
         auto& output = a2b::A2bPcm::getInstance().output();
         const size_t written = output.enqueue(mA2bClient,
                 {static_cast<const int16_t*>(buffer), frameCount * 2});
-        if (written != frameCount) LOG(WARNING) << "A2B audio queue full, dropped "
-                                               << frameCount - written << " frames";
-        *actualFrameCount = frameCount;
+        *actualFrameCount = written;
         *latencyMs = a2b::A2bPcm::kLatencyMs + output.queuedFrames(mA2bClient) / 48;
+        // enqueue waits for PCM consumption. A second wall-clock pacer can
+        // starve this queue or overfill it when its period sizes do not align.
+        // Short acceptance means the client was flushed/detached, never success.
+        return written == frameCount ? ::android::OK : ::android::DEAD_OBJECT;
     } else if (!mSkipNextTransfer) {
         RETURN_STATUS_IF_ERROR(
                 StreamAlsaMonoPipe::transfer(buffer, frameCount, actualFrameCount, latencyMs));
