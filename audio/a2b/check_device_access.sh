@@ -10,13 +10,16 @@ case "$(a2bctl status)" in
 esac
 
 pid=$(pidof android.hardware.audio.service.rpi)
-# Reproduce the running HAL's actual Unix identity, including its supplementary groups.
-identity=$(awk '
+# Android su limits supplementary groups. Keep the HAL's UID/primary GID and
+# include the profile group only if the real HAL has it; unrelated groups are omitted.
+profile_gid=$(stat -c %g /data/vendor/a2b/profiles)
+identity=$(awk -v profile_gid="$profile_gid" '
     /^Uid:/ { uid=$2 }
     /^Gid:/ { gid=$2 }
-    /^Groups:/ { for (i=2; i<=NF; i++) groups=groups "," $i }
-    END { printf "%s,%s%s", uid, gid, groups }
+    /^Groups:/ { for (i=2; i<=NF; i++) if ($i==profile_gid) group="," $i }
+    END { printf "%s,%s%s", uid, gid, group }
 ' /proc/"$pid"/status)
+hal_uid=${identity%%,*}
 probe=/data/vendor/a2b/profiles/.access-check.$$
 trap 'rm -f "$probe"' EXIT
 printf 'profile read permission probe\n' > "$probe"
@@ -25,9 +28,9 @@ chmod 0640 "$probe"
 restorecon "$probe"
 
 failed=0
-su "$identity" sh -c 'cat "$1" >/dev/null && test ! -w "$1"' sh "$probe" || failed=1
+su "$identity" sh -c 'test "$(id -u)" = "$2" && cat "$1" >/dev/null && test ! -w "$1"' sh "$probe" "$hal_uid" || failed=1
 # Opening i2c-dev checks DAC access without issuing an ioctl, read or write.
-su "$identity" sh -c 'exec 9<> /dev/i2c-1 && exec 9>&-' || failed=1
+su "$identity" sh -c 'test "$(id -u)" = "$1" && exec 9<> /dev/i2c-1 && exec 9>&-' sh "$hal_uid" || failed=1
 # Also exercise profile loading inside the HAL's real SELinux domain.
 a2bctl select "$profile" || failed=1
 [ "$failed" = 0 ] || { echo "FAIL: audio HAL access" >&2; exit 1; }
