@@ -8,3 +8,8 @@ on fs
 
 on late-fs
     mount_all /vendor/etc/fstab.${ro.hardware} --late
+
+on post-fs-data
+    mkdir /data/vendor/a2b 0750 root audioserver
+    mkdir /data/vendor/a2b/profiles 0750 root audioserver
+    restorecon_recursive /data/vendor/a2b

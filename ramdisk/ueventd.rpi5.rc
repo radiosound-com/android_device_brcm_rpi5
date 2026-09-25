@@ -25,7 +25,7 @@
 /dev/ttyACM0                                                                 0660   gps        gps
 
 # A2B
-/dev/i2c-[0-9]+                                                              0660   audioserver audio
+/dev/i2c-*                                                                   0660   audioserver audio
 
 # USB
 /sys/class/udc/1000480000.usb  current_speed                                 0664   system     system

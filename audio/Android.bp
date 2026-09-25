@@ -3,36 +3,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-soong_config_module_type {
-    name: "rpi_a2b_cc_defaults",
-    module_type: "cc_defaults",
-    config_namespace: "rpi_audio",
-    variables: ["a2b_init_routine"],
-    properties: ["cflags"],
-}
-
-soong_config_string_variable {
-    name: "a2b_init_routine",
-    values: [
-        "mr_data_main_2node_tdm4",
-        "mr_data_main_1node",
-    ],
-}
-
-rpi_a2b_cc_defaults {
-    name: "rpi_a2b_init_defaults",
-    soong_config_variables: {
-        a2b_init_routine: {
-            mr_data_main_2node_tdm4: {
-                cflags: ["-DA2B_INIT_ROUTINE=1"],
-            },
-            mr_data_main_1node: {
-                cflags: ["-DA2B_INIT_ROUTINE=2"],
-            },
-        },
-    },
-}
-
 cc_defaults {
     name: "aidlaudioservice_rpi_defaults",
     vendor: true,
@@ -51,12 +21,14 @@ cc_defaults {
         "libcutils",
         "libfmq",
         "liblog",
+        "libpower",
         "libmedia_helper",
         "libnbaio_mono",
         "libstagefright_foundation",
         "libtinyalsav2",
         "libutils",
         "libxml2",
+        "libjsoncpp",
     ],
     header_libs: [
         "libaudio_system_headers",
@@ -83,11 +55,14 @@ cc_defaults {
 
 cc_library {
     name: "libaudioserviceimpl-rpi",
-    defaults: ["aidlaudioservice_rpi_defaults", "rpi_a2b_init_defaults"],
+    defaults: ["aidlaudioservice_rpi_defaults"],
     export_include_dirs: ["include"],
     srcs: [
         "AidlConversionXsdc.cpp",
         "a2b/A2bController.cpp",
+        "a2b/A2bPcm.cpp",
+        "a2b/ContinuousOutput.cpp",
+        "a2b/Profile.cpp",
         "AudioPolicyConfigXmlConverter.cpp",
         "Bluetooth.cpp",
         "CapEngineConfigXmlConverter.cpp",
@@ -322,4 +297,26 @@ apex {
         "libasound-config",
         "libasound-config-pcm",
     ],
+}
+
+cc_binary {
+    name: "a2bctl",
+    vendor: true,
+    srcs: ["a2b/a2bctl.cpp", "a2b/Profile.cpp"],
+    shared_libs: ["libbase", "libcutils", "libjsoncpp", "liblog"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+}
+
+cc_test_host {
+    name: "rpi_a2b_profile_test",
+    srcs: ["a2b/Profile.cpp", "a2b/ProfileTest.cpp"],
+    static_libs: ["libjsoncpp"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+    data: ["a2b/profiles/*.json"],
+}
+
+cc_test_host {
+    name: "rpi_a2b_continuous_output_test",
+    srcs: ["a2b/ContinuousOutput.cpp", "a2b/ContinuousOutputTest.cpp"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
 }

@@ -6,29 +6,37 @@
 
 DEVICE_PATH := device/brcm/rpi5
 
-# Public Caramel Vanilla images use USB audio. A private product may still
-# provide its own audio override, but this product never selects it:
-#
-#   m RPI5_AUDIO=usb -j8
+# One HAL supports both outputs; A2B additionally enables the boot overlay.
 RPI5_AUDIO ?= usb
+RPI5_AUDIO_INPUT ?= usb
+RPI5_A2B_PROFILE ?= tas5720a_1node
+RPI5_AUDIO_USB_CAPTURE_SOURCE ?= Mic
 ifeq ($(RPI5_AUDIO),a2b)
 RPI5_AUDIO_DEVICE := rpi
-RPI5_SIMULATE_INPUT := true
 else ifeq ($(RPI5_AUDIO),usb)
 RPI5_AUDIO_DEVICE := usb
-RPI5_SIMULATE_INPUT := false
-RPI5_AUDIO_USB_CAPTURE_SOURCE ?= Mic
 else
-$(error Unsupported RPI5_AUDIO '$(RPI5_AUDIO)'; use usb)
+$(error Unsupported RPI5_AUDIO '$(RPI5_AUDIO)'; use usb or a2b)
 endif
-
+ifeq ($(RPI5_AUDIO_INPUT),usb)
+RPI5_SIMULATE_INPUT := false
+else ifeq ($(RPI5_AUDIO_INPUT),none)
+RPI5_SIMULATE_INPUT := true
+else
+$(error Unsupported RPI5_AUDIO_INPUT '$(RPI5_AUDIO_INPUT)'; use usb or none)
+endif
+ifeq ($(wildcard $(DEVICE_PATH)/audio/a2b/profiles/$(RPI5_A2B_PROFILE).json),)
+$(error Missing A2B profile '$(RPI5_A2B_PROFILE)')
+endif
 PRODUCT_VENDOR_PROPERTIES += \
     persist.vendor.audio.device=$(RPI5_AUDIO_DEVICE) \
-    ro.boot.audio.tinyalsa.simulate_input=$(RPI5_SIMULATE_INPUT)
-ifeq ($(RPI5_AUDIO),usb)
-PRODUCT_VENDOR_PROPERTIES += \
+    persist.vendor.audio.a2b.profile=$(RPI5_A2B_PROFILE) \
+    ro.vendor.audio.input=$(RPI5_AUDIO_INPUT) \
+    ro.boot.audio.tinyalsa.simulate_input=$(RPI5_SIMULATE_INPUT) \
     persist.vendor.audio.usb.capture_source=$(RPI5_AUDIO_USB_CAPTURE_SOURCE)
-endif
+PRODUCT_PACKAGES += a2bctl
+PRODUCT_COPY_FILES += $(foreach f,$(wildcard $(DEVICE_PATH)/audio/a2b/profiles/*.json),\
+    $(f):$(TARGET_COPY_OUT_VENDOR)/etc/a2b/profiles/$(notdir $(f)))
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit_only.mk)
 $(call inherit-product, frameworks/native/build/tablet-7in-xhdpi-2048-dalvik-heap.mk)
