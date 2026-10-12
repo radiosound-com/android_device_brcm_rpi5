@@ -49,6 +49,12 @@ OVERRIDE_PRODUCT_COMPRESSED_APEX := false
 PRODUCT_SHIPPING_API_LEVEL := 37
 
 # Audio
+# Select USB capture/playback independently. In the framework's single-device
+# default, attaching a capture-only microphone disconnects the sound card's
+# output too. Multi-USB mode replaces only the matching device direction/type.
+PRODUCT_SYSTEM_PROPERTIES += \
+    ro.audio.multi_usb_mode=true
+
 PRODUCT_PACKAGES += \
     com.android.hardware.audio.rpi
 
